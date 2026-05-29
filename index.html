@@ -17,6 +17,7 @@
     <span class="logo-sub">— lo que sé hacer bien</span>
   </div>
   <div class="header-right">
+    <button class="btn-circle" id="wake-btn" onclick="toggleWakeLock()" aria-label="Pantalla siempre activa" title="Mantener pantalla encendida">💤</button>
     <button class="btn-circle theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema" id="theme-btn">🌙</button>
     <button class="btn-circle" onclick="document.getElementById('search').focus()" aria-label="Buscar">🔍</button>
   </div>
@@ -132,31 +133,18 @@
     <div class="f-group">
       <label class="f-label">Ingredientes</label>
       <div class="dyn-list" id="ing-list"></div>
-      <button class="btn-add-row" onclick="addIng()">+ Añadir ingrediente</button>
+      <button class="btn-add-row" type="button" onclick="addIng()">+ Añadir ingrediente</button>
     </div>
     <div class="f-group">
       <label class="f-label">Pasos</label>
       <div class="dyn-list" id="step-list"></div>
-      <button class="btn-add-row" onclick="addStep()">+ Añadir paso</button>
+      <button class="btn-add-row" type="button" onclick="addStep()">+ Añadir paso</button>
     </div>
     <div class="f-group">
       <label class="f-label">Consejo (opcional)</label>
       <textarea class="f-textarea" id="f-tips" placeholder="Trucos, variaciones, conservación…"></textarea>
     </div>
-    <button class="btn-submit" onclick="saveRecipe()">Guardar receta</button>
-  </div>
-</div>
-
-<!-- ══ CONFIRM DIALOG ══════════════════════════════════════ -->
-<div class="confirm-backdrop" id="confirm-backdrop">
-  <div class="confirm-box">
-    <div class="confirm-icon" id="confirm-icon">✏️</div>
-    <div class="confirm-title" id="confirm-title">¿Editar receta?</div>
-    <div class="confirm-msg" id="confirm-msg">Vas a editar esta receta.</div>
-    <div class="confirm-btns">
-      <button class="confirm-cancel" onclick="closeConfirm()">Cancelar</button>
-      <button class="confirm-ok" id="confirm-ok-btn" onclick="confirmAction()">Continuar</button>
-    </div>
+    <button class="btn-submit" type="button" onclick="saveRecipe()">Guardar receta</button>
   </div>
 </div>
 
@@ -174,7 +162,7 @@ const ALLERGENS = [
   { id: 'soja',         label: 'Soja',         icon: '🫘' },
   { id: 'pescado',      label: 'Pescado',      icon: '🐟' },
   { id: 'marisco',      label: 'Marisco',      icon: '🦐' },
-  { id: 'sesamo',       label: 'Sésamo',       icon: '🌱' },
+  { id: 'sesamo',       label: 'Sésamo',       icon: '🌾' },
   { id: 'apio',         label: 'Apio',         icon: '🥬' },
   { id: 'mostaza',      label: 'Mostaza',      icon: '🌿' },
   { id: 'sulfitos',     label: 'Sulfitos',     icon: '🍇' },
@@ -193,7 +181,47 @@ let recipes = [];
 let activeTag = 'todos';
 let checked = {};
 let done = {};
-let pendingAction = null;
+
+/* ── WAKE LOCK ──────────────────────────────────────────── */
+let wakeLock = null;
+
+async function toggleWakeLock() {
+  const btn = document.getElementById('wake-btn');
+  if (wakeLock) {
+    await wakeLock.release();
+    wakeLock = null;
+    btn.textContent = '💤';
+    btn.classList.remove('wake-active');
+    showToast('Pantalla normal');
+  } else {
+    if (!('wakeLock' in navigator)) {
+      showToast('Tu navegador no soporta esta función');
+      return;
+    }
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      btn.textContent = '👁️';
+      btn.classList.add('wake-active');
+      showToast('Pantalla siempre activa ✓');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+        btn.textContent = '💤';
+        btn.classList.remove('wake-active');
+      });
+    } catch(e) {
+      showToast('No se pudo activar: ' + e.message);
+    }
+  }
+}
+
+// Re-acquire wake lock after visibility change (e.g. tab switch)
+document.addEventListener('visibilitychange', async () => {
+  if (wakeLock !== null && document.visibilityState === 'visible') {
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+    } catch(e) {}
+  }
+});
 
 /* ── THEME ─────────────────────────────────────────────── */
 function applyTheme(dark) {
@@ -268,7 +296,7 @@ function filterRecipes() {
   return list;
 }
 
-/* ── DIET BADGE HTML ────────────────────────────────────── */
+/* ── DIET BADGE ─────────────────────────────────────────── */
 function dietBadgeHTML(diet) {
   if (!diet) return '';
   const cls = diet === 'vegano' ? 'dbadge-vegan' : 'dbadge-vegetarian';
@@ -290,50 +318,35 @@ function renderCards() {
     return;
   }
 
+  // Build cards as DOM nodes to avoid innerHTML corruption
   page.innerHTML = '';
 
   list.forEach((r, i) => {
-    const delay = i * 55;
+    const card = document.createElement('div');
+    card.className = 'recipe-card card-standard';
+    card.style.animationDelay = (i * 55) + 'ms';
+    card.addEventListener('click', () => openDetail(r.id));
+
     const dietBadge = dietBadgeHTML(r.diet);
     const badgesBlock = dietBadge ? `<div class="card-badges">${dietBadge}</div>` : '';
+    const tagsHTML = (r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('');
 
-    if (i === 0) {
-      page.innerHTML += `
-      <div class="recipe-card card-hero" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
-        <div class="card-color-band" style="background:${r.color}"></div>
-        <div class="card-body">
-          <div class="card-cat">${r.category||''}</div>
-          ${badgesBlock}
-          <h2 class="card-title">${r.name}</h2>
-          ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
-          <div class="card-meta">
-            <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
-            <span class="meta-item"><span class="meta-icon">🔥</span>${r.cookTime}</span>
-            <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
-            <span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty||'—'}</span>
-          </div>
-          <div class="card-tags">
-            ${(r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('')}
-          </div>
+    card.innerHTML = `
+      <div class="card-emoji-col" style="background:${r.color}30">${r.emoji||'🍽️'}</div>
+      <div class="card-body">
+        <div class="card-cat">${r.category||''}</div>
+        ${badgesBlock}
+        <div class="card-title">${r.name}</div>
+        ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
+        <div class="card-meta">
+          <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
+          <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
+          ${r.difficulty ? `<span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty}</span>` : ''}
         </div>
+        ${tagsHTML ? `<div class="card-tags">${tagsHTML}</div>` : ''}
       </div>`;
-    } else {
-      page.innerHTML += `
-      <div class="recipe-card card-standard" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
-        <div class="card-emoji-col" style="background:${r.color}20">${r.emoji||'🍽️'}</div>
-        <div class="card-body">
-          <div class="card-cat">${r.category||''}</div>
-          ${badgesBlock}
-          <div class="card-title">${r.name}</div>
-          ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
-          <div class="card-meta">
-            <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
-            <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
-            ${r.difficulty ? `<span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty}</span>` : ''}
-          </div>
-        </div>
-      </div>`;
-    }
+
+    page.appendChild(card);
   });
 }
 
@@ -344,20 +357,6 @@ function openDetail(id) {
   if (!checked[id]) checked[id] = {};
   if (!done[id]) done[id] = {};
 
-  const ings = (r.ingredients||[]).map((ing, i) => `
-    <li class="ing-item ${checked[id][i]?'checked':''}" onclick="toggleIng(${id},${i},this)">
-      <span class="ing-check"></span>
-      <span class="ing-amount">${ing.amount}</span>
-      <span class="ing-name-text">${ing.name}</span>
-    </li>`).join('');
-
-  const steps = (r.steps||[]).map((s, i) => `
-    <li class="step-item ${done[id][i]?'done':''}" onclick="toggleStep(${id},${i},this)">
-      <span class="step-num">${i+1}</span>
-      <p class="step-text">${s}</p>
-    </li>`).join('');
-
-  // Allergens section
   const allergens = r.allergens || [];
   let allergenHTML = '';
   if (allergens.length > 0) {
@@ -379,84 +378,95 @@ function openDetail(id) {
   const dietBadge = dietBadgeHTML(r.diet);
   const badgesBlock = dietBadge ? `<div class="detail-badges">${dietBadge}</div>` : '';
 
-  document.getElementById('detail-inner').innerHTML = `
-    <div class="detail-color-band" style="background:${r.color}"></div>
-    <div class="detail-emoji">${r.emoji||'🍽️'}</div>
-    <div class="detail-body">
-      <div class="detail-cat">${r.category||''}</div>
-      ${badgesBlock}
-      <h1 class="detail-title">${r.name}</h1>
-      ${r.description ? `<p class="detail-desc">${r.description}</p>` : ''}
-      <div class="detail-stats">
-        <div class="dstat"><span class="dstat-icon">⏱</span><span class="dstat-val">${r.prepTime}</span><span class="dstat-lbl">Prep.</span></div>
-        <div class="dstat"><span class="dstat-icon">🔥</span><span class="dstat-val">${r.cookTime}</span><span class="dstat-lbl">Cocción</span></div>
-        <div class="dstat"><span class="dstat-icon">🍽</span><span class="dstat-val">${r.servings}</span><span class="dstat-lbl">Raciones</span></div>
-        <div class="dstat"><span class="dstat-icon">📊</span><span class="dstat-val">${r.difficulty||'—'}</span><span class="dstat-lbl">Nivel</span></div>
-      </div>
-      ${allergenHTML}
-      ${ings ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ings}</ul>` : ''}
-      ${steps ? `<h3 class="sec-title">Elaboración</h3><ol class="steps-list">${steps}</ol>` : ''}
-      ${r.tips ? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
-      <div class="detail-actions">
-        <button class="btn-edit" onclick="askEdit(${id})">✏️ Editar receta</button>
-        <button class="btn-delete" onclick="askDelete(${id})">🗑</button>
-      </div>
+  const inner = document.getElementById('detail-inner');
+  inner.innerHTML = '';
+
+  const colorBand = document.createElement('div');
+  colorBand.className = 'detail-color-band';
+  colorBand.style.background = r.color;
+  inner.appendChild(colorBand);
+
+  const emojiDiv = document.createElement('div');
+  emojiDiv.className = 'detail-emoji';
+  emojiDiv.textContent = r.emoji || '🍽️';
+  inner.appendChild(emojiDiv);
+
+  const body = document.createElement('div');
+  body.className = 'detail-body';
+
+  // Build ingredients list
+  const ingsHTML = (r.ingredients||[]).map((ing, i) => `
+    <li class="ing-item ${checked[id][i]?'checked':''}" data-idx="${i}">
+      <span class="ing-check"></span>
+      <span class="ing-amount">${ing.amount}</span>
+      <span class="ing-name-text">${ing.name}</span>
+    </li>`).join('');
+
+  // Build steps list
+  const stepsHTML = (r.steps||[]).map((s, i) => `
+    <li class="step-item ${done[id][i]?'done':''}" data-idx="${i}">
+      <span class="step-num">${i+1}</span>
+      <p class="step-text">${s}</p>
+    </li>`).join('');
+
+  body.innerHTML = `
+    <div class="detail-cat">${r.category||''}</div>
+    ${badgesBlock}
+    <h1 class="detail-title">${r.name}</h1>
+    ${r.description ? `<p class="detail-desc">${r.description}</p>` : ''}
+    <div class="detail-stats">
+      <div class="dstat"><span class="dstat-icon">⏱</span><span class="dstat-val">${r.prepTime}</span><span class="dstat-lbl">Prep.</span></div>
+      <div class="dstat"><span class="dstat-icon">🔥</span><span class="dstat-val">${r.cookTime}</span><span class="dstat-lbl">Cocción</span></div>
+      <div class="dstat"><span class="dstat-icon">🍽</span><span class="dstat-val">${r.servings}</span><span class="dstat-lbl">Raciones</span></div>
+      <div class="dstat"><span class="dstat-icon">📊</span><span class="dstat-val">${r.difficulty||'—'}</span><span class="dstat-lbl">Nivel</span></div>
+    </div>
+    ${allergenHTML}
+    ${ingsHTML ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ingsHTML}</ul>` : ''}
+    ${stepsHTML ? `<h3 class="sec-title">Elaboración</h3><ol class="steps-list">${stepsHTML}</ol>` : ''}
+    ${r.tips ? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
+    <div class="detail-actions">
+      <button class="btn-edit" id="btn-edit-${id}" type="button">✏️ Editar receta</button>
+      <button class="btn-delete" id="btn-delete-${id}" type="button">🗑</button>
     </div>`;
+
+  inner.appendChild(body);
+
+  // Attach event listeners directly (no inline onclick — avoids scope issues)
+  body.querySelector('.ing-list') && body.querySelector('.ing-list').addEventListener('click', e => {
+    const li = e.target.closest('.ing-item');
+    if (!li) return;
+    const idx = parseInt(li.dataset.idx);
+    checked[id][idx] = !checked[id][idx];
+    li.classList.toggle('checked', checked[id][idx]);
+  });
+
+  body.querySelector('.steps-list') && body.querySelector('.steps-list').addEventListener('click', e => {
+    const li = e.target.closest('.step-item');
+    if (!li) return;
+    const idx = parseInt(li.dataset.idx);
+    done[id][idx] = !done[id][idx];
+    li.classList.toggle('done', done[id][idx]);
+  });
+
+  document.getElementById(`btn-edit-${id}`).addEventListener('click', () => editRecipe(id));
+  document.getElementById(`btn-delete-${id}`).addEventListener('click', () => askDelete(id));
 
   openSheet('detail-sheet');
 }
 
-function toggleIng(rid, idx, el) {
-  checked[rid][idx] = !checked[rid][idx];
-  el.classList.toggle('checked', checked[rid][idx]);
-}
-function toggleStep(rid, idx, el) {
-  done[rid][idx] = !done[rid][idx];
-  el.classList.toggle('done', done[rid][idx]);
+/* ── EDIT directly (no confirm dialog needed) ───────────── */
+function editRecipe(id) {
+  // Close detail sheet first, then open form after animation
+  closeDetailOnly();
+  setTimeout(() => openForm(id), 320);
 }
 
-/* ── CONFIRM DIALOG ─────────────────────────────────────── */
-function showConfirm({icon, title, msg, okLabel='Continuar', danger=false, onOk}) {
-  document.getElementById('confirm-icon').textContent = icon;
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-msg').textContent = msg;
-  const okBtn = document.getElementById('confirm-ok-btn');
-  okBtn.textContent = okLabel;
-  okBtn.className = 'confirm-ok' + (danger ? ' danger' : '');
-  pendingAction = onOk;
-  document.getElementById('confirm-backdrop').classList.add('open');
-}
-function closeConfirm() {
-  document.getElementById('confirm-backdrop').classList.remove('open');
-  pendingAction = null;
-}
-function confirmAction() {
-  closeConfirm();
-  if (pendingAction) pendingAction();
-}
-
-/* ── EDIT / DELETE ──────────────────────────────────────── */
-function askEdit(id) {
-  const r = recipes.find(x => x.id === id);
-  showConfirm({
-    icon: '✏️', title: '¿Editar receta?',
-    msg: `Vas a editar "${r.name}". Los cambios reemplazarán la versión actual.`,
-    okLabel: 'Editar', danger: false,
-    onOk: () => { closeAll(); setTimeout(() => openForm(id), 100); }
-  });
-}
 function askDelete(id) {
   const r = recipes.find(x => x.id === id);
-  showConfirm({
-    icon: '🗑️', title: '¿Eliminar receta?',
-    msg: `"${r.name}" se eliminará de forma permanente.`,
-    okLabel: 'Eliminar', danger: true,
-    onOk: () => {
-      recipes = recipes.filter(x => x.id !== id);
-      persist(); rebuildChips(); closeAll(); renderCards();
-      showToast('Receta eliminada');
-    }
-  });
+  if (!confirm(`¿Eliminar "${r.name}" de forma permanente?`)) return;
+  recipes = recipes.filter(x => x.id !== id);
+  persist(); rebuildChips(); closeAll(); renderCards();
+  showToast('Receta eliminada');
 }
 
 /* ── FORM ───────────────────────────────────────────────── */
@@ -469,7 +479,7 @@ function buildAllergenChecks(selected=[]) {
     btn.className = 'allergen-check-btn' + (selected.includes(a.id) ? ' selected' : '');
     btn.dataset.id = a.id;
     btn.textContent = `${a.icon} ${a.label}`;
-    btn.onclick = () => btn.classList.toggle('selected');
+    btn.addEventListener('click', () => btn.classList.toggle('selected'));
     container.appendChild(btn);
   });
 }
@@ -482,49 +492,76 @@ function selectDiet(el) {
 function openForm(editId) {
   const r = editId ? recipes.find(x => x.id === editId) : null;
   document.getElementById('form-title').textContent = r ? 'Editar receta' : 'Nueva receta';
-  document.getElementById('f-id').value = r ? r.id : '';
+  document.getElementById('f-id').value = r ? String(r.id) : '';
 
-  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val||''; };
-  set('f-name', r?.name);
-  set('f-desc', r?.description);
-  set('f-emoji', r?.emoji);
-  set('f-cat', r?.category);
-  set('f-prep', r?.prepTime);
-  set('f-cook', r?.cookTime);
-  set('f-total', r?.totalTime);
-  set('f-servings', r?.servings);
-  set('f-tips', r?.tips);
-  set('f-tags', r ? (r.tags||[]).join(', ') : '');
-  document.getElementById('f-diff').value = r?.difficulty || 'Fácil';
+  const setVal = (elId, val) => {
+    const el = document.getElementById(elId);
+    if (el) el.value = (val != null ? val : '');
+  };
+
+  setVal('f-name',     r?.name);
+  setVal('f-desc',     r?.description);
+  setVal('f-emoji',    r?.emoji);
+  setVal('f-cat',      r?.category);
+  setVal('f-prep',     r?.prepTime);
+  setVal('f-cook',     r?.cookTime);
+  setVal('f-total',    r?.totalTime);
+  setVal('f-servings', r?.servings);
+  setVal('f-tips',     r?.tips);
+  setVal('f-tags',     r ? (r.tags||[]).join(', ') : '');
+  document.getElementById('f-diff').value  = r?.difficulty || 'Fácil';
   document.getElementById('f-color').value = r?.color || '#f5e0c0';
 
-  // Diet buttons
-  const dietVal = r?.diet || 'null';
+  // Diet
+  const dietVal = r?.diet ?? null;
   document.querySelectorAll('.diet-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.val === String(dietVal));
+    const bVal = b.dataset.val === 'null' ? null : b.dataset.val;
+    b.classList.toggle('active', bVal === dietVal);
   });
 
-  // Allergen checkboxes
+  // Allergens
   buildAllergenChecks(r?.allergens || []);
 
-  document.getElementById('ing-list').innerHTML = '';
-  document.getElementById('step-list').innerHTML = '';
-  if (r) {
-    (r.ingredients||[]).forEach(ing => addIng(ing.amount, ing.name));
-    (r.steps||[]).forEach(s => addStep(s));
+  // Ingredients
+  const ingList = document.getElementById('ing-list');
+  ingList.innerHTML = '';
+  if (r && r.ingredients?.length) {
+    r.ingredients.forEach(ing => addIng(ing.amount, ing.name));
   } else {
     addIng(); addIng(); addIng();
+  }
+
+  // Steps
+  const stepList = document.getElementById('step-list');
+  stepList.innerHTML = '';
+  if (r && r.steps?.length) {
+    r.steps.forEach(s => addStep(s));
+  } else {
     addStep(); addStep();
   }
+
   openSheet('form-sheet');
 }
 
 function addIng(amount='', name='') {
   const el = document.createElement('div');
   el.className = 'ing-dyn';
-  el.innerHTML = `<input class="f-input" placeholder="100 g" value="${escAttr(amount)}" />
-  <input class="f-input" placeholder="ingrediente" value="${escAttr(name)}" />
-  <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
+  const inp1 = document.createElement('input');
+  inp1.className = 'f-input';
+  inp1.placeholder = '100 g';
+  inp1.value = amount;
+  const inp2 = document.createElement('input');
+  inp2.className = 'f-input';
+  inp2.placeholder = 'ingrediente';
+  inp2.value = name;
+  const rm = document.createElement('button');
+  rm.type = 'button';
+  rm.className = 'btn-rm';
+  rm.textContent = '✕';
+  rm.addEventListener('click', () => el.remove());
+  el.appendChild(inp1);
+  el.appendChild(inp2);
+  el.appendChild(rm);
   document.getElementById('ing-list').appendChild(el);
 }
 
@@ -532,12 +569,24 @@ function addStep(val='') {
   const n = document.getElementById('step-list').children.length + 1;
   const el = document.createElement('div');
   el.className = 'dyn-item';
-  el.innerHTML = `<input class="f-input" placeholder="Paso ${n}…" value="${escAttr(val)}" style="flex:1" />
-  <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
+  const num = document.createElement('span');
+  num.className = 'step-dyn-num';
+  num.textContent = n;
+  const ta = document.createElement('textarea');
+  ta.className = 'f-textarea f-step-ta';
+  ta.placeholder = `Paso ${n}…`;
+  ta.value = val;
+  ta.rows = 2;
+  const rm = document.createElement('button');
+  rm.type = 'button';
+  rm.className = 'btn-rm';
+  rm.textContent = '✕';
+  rm.addEventListener('click', () => el.remove());
+  el.appendChild(num);
+  el.appendChild(ta);
+  el.appendChild(rm);
   document.getElementById('step-list').appendChild(el);
 }
-
-function escAttr(s) { return (s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function saveRecipe() {
   const name = document.getElementById('f-name').value.trim();
@@ -548,30 +597,30 @@ function saveRecipe() {
     return { amount: ins[0].value.trim(), name: ins[1].value.trim() };
   }).filter(i => i.name);
 
-  const steps = [...document.querySelectorAll('#step-list .dyn-item input')]
-    .map(i => i.value.trim()).filter(Boolean);
+  const steps = [...document.querySelectorAll('#step-list .dyn-item textarea')]
+    .map(ta => ta.value.trim()).filter(Boolean);
 
   const tags = document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
 
-  // Get selected diet
   const activeDietBtn = document.querySelector('.diet-btn.active');
-  const dietVal = activeDietBtn ? activeDietBtn.dataset.val : 'null';
+  const dietVal = activeDietBtn?.dataset.val ?? 'null';
   const diet = dietVal === 'null' ? null : dietVal;
 
-  // Get selected allergens
   const allergens = [...document.querySelectorAll('.allergen-check-btn.selected')].map(b => b.dataset.id);
 
-  const editId = document.getElementById('f-id').value;
+  const editIdStr = document.getElementById('f-id').value.trim();
+  const editId = editIdStr ? parseInt(editIdStr, 10) : null;
+
   const recipe = {
-    id: editId ? parseInt(editId) : Date.now(),
+    id: editId || Date.now(),
     name,
     description: document.getElementById('f-desc').value.trim(),
     emoji: document.getElementById('f-emoji').value.trim() || '🍽️',
     category: document.getElementById('f-cat').value.trim() || 'Sin categoría',
-    prepTime: document.getElementById('f-prep').value.trim() || '—',
-    cookTime: document.getElementById('f-cook').value.trim() || '—',
+    prepTime:  document.getElementById('f-prep').value.trim() || '—',
+    cookTime:  document.getElementById('f-cook').value.trim() || '—',
     totalTime: document.getElementById('f-total').value.trim() || '—',
-    servings: document.getElementById('f-servings').value.trim() || '—',
+    servings:  document.getElementById('f-servings').value.trim() || '—',
     difficulty: document.getElementById('f-diff').value,
     color: document.getElementById('f-color').value,
     diet, allergens, tags, ingredients, steps,
@@ -579,14 +628,22 @@ function saveRecipe() {
   };
 
   if (editId) {
-    const idx = recipes.findIndex(x => x.id === parseInt(editId));
-    if (idx >= 0) recipes[idx] = recipe;
+    const idx = recipes.findIndex(x => x.id === editId);
+    if (idx >= 0) {
+      recipes[idx] = recipe;
+    } else {
+      recipes.unshift(recipe);
+    }
     showToast('Receta actualizada ✓');
   } else {
     recipes.unshift(recipe);
     showToast('¡Receta guardada! 🎉');
   }
-  persist(); rebuildChips(); closeAll(); renderCards();
+
+  persist();
+  rebuildChips();
+  closeAll();
+  renderCards();
 }
 
 /* ── SHEET HELPERS ──────────────────────────────────────── */
@@ -595,6 +652,13 @@ function openSheet(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+function closeDetailOnly() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('detail-sheet').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 function closeAll() {
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('detail-sheet').classList.remove('open');

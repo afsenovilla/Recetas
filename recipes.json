@@ -13,21 +13,65 @@
     "servings": "~600 g",
     "difficulty": "Fácil",
     "diet": null,
-    "tags": ["galletas", "repostería", "decoración"],
-    "allergens": ["gluten", "lacteos", "huevos"],
+    "tags": [
+      "galletas",
+      "repostería",
+      "decoración"
+    ],
+    "allergens": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "ingredients": [
-      { "amount": "285 g", "name": "harina de repostería" },
-      { "amount": "200 g", "name": "mantequilla" },
-      { "amount": "100 g", "name": "azúcar glas" },
-      { "amount": "40 g", "name": "huevo batido" },
-      { "amount": "15 g", "name": "mezcla de especias (opcional)" },
-      { "amount": "1 cda", "name": "canela molida" },
-      { "amount": "1 cdta", "name": "nuez moscada" },
-      { "amount": "½ cdta", "name": "jengibre en polvo" },
-      { "amount": "¼ cdta", "name": "clavo molido" },
-      { "amount": "¼ cdta", "name": "cardamomo molido" },
-      { "amount": "¼ cdta", "name": "pimienta blanca" },
-      { "amount": "—", "name": "Para decorar: azúcar glas, chocolate, mermelada" }
+      {
+        "amount": "285 g",
+        "name": "harina de repostería"
+      },
+      {
+        "amount": "200 g",
+        "name": "mantequilla"
+      },
+      {
+        "amount": "100 g",
+        "name": "azúcar glas"
+      },
+      {
+        "amount": "40 g",
+        "name": "huevo batido"
+      },
+      {
+        "amount": "15 g",
+        "name": "mezcla de especias (opcional)"
+      },
+      {
+        "amount": "1 cda",
+        "name": "canela molida"
+      },
+      {
+        "amount": "1 cdta",
+        "name": "nuez moscada"
+      },
+      {
+        "amount": "½ cdta",
+        "name": "jengibre en polvo"
+      },
+      {
+        "amount": "¼ cdta",
+        "name": "clavo molido"
+      },
+      {
+        "amount": "¼ cdta",
+        "name": "cardamomo molido"
+      },
+      {
+        "amount": "¼ cdta",
+        "name": "pimienta blanca"
+      },
+      {
+        "amount": "—",
+        "name": "Para decorar: azúcar glas, chocolate, mermelada"
+      }
     ],
     "steps": [
       "Si usas especias, mézclalas con la harina. Sin especias, usa 300 g de harina.",
@@ -56,21 +100,63 @@
     "servings": "12-14 uds",
     "difficulty": "Media",
     "diet": "vegano",
-    "tags": ["bollería", "canela"],
-    "allergens": ["gluten", "frutos_secos"],
+    "tags": [
+      "bollería",
+      "canela"
+    ],
+    "allergens": [
+      "gluten",
+      "frutos_secos"
+    ],
     "ingredients": [
-      { "amount": "480 ml", "name": "leche de almendras a temperatura ambiente" },
-      { "amount": "115 g", "name": "mantequilla vegetal derretida (masa)" },
-      { "amount": "50 g", "name": "azúcar blanco" },
-      { "amount": "1 sobre", "name": "levadura seca de panadería (7 g)" },
-      { "amount": "660 g", "name": "harina de trigo" },
-      { "amount": "1 cdta", "name": "sal" },
-      { "amount": "170 g", "name": "mantequilla vegetal blanda (relleno)" },
-      { "amount": "150 g", "name": "azúcar moreno (relleno)" },
-      { "amount": "2 cdas", "name": "canela molida (relleno)" },
-      { "amount": "120 g", "name": "azúcar glas (glaseado)" },
-      { "amount": "2-3 cdas", "name": "leche de almendras (glaseado)" },
-      { "amount": "½ cdta", "name": "extracto de vainilla (glaseado)" }
+      {
+        "amount": "480 ml",
+        "name": "leche de avena a temperatura ambiente"
+      },
+      {
+        "amount": "115 g",
+        "name": "mantequilla vegetal derretida (masa)"
+      },
+      {
+        "amount": "50 g",
+        "name": "azúcar blanco"
+      },
+      {
+        "amount": "1 sobre",
+        "name": "levadura seca de panadería (7 g)"
+      },
+      {
+        "amount": "660 g",
+        "name": "harina de trigo"
+      },
+      {
+        "amount": "1 cdta",
+        "name": "sal"
+      },
+      {
+        "amount": "170 g",
+        "name": "mantequilla vegetal blanda (relleno)"
+      },
+      {
+        "amount": "150 g",
+        "name": "azúcar moreno (relleno)"
+      },
+      {
+        "amount": "2 cdas",
+        "name": "canela molida (relleno)"
+      },
+      {
+        "amount": "120 g",
+        "name": "azúcar glas (glaseado)"
+      },
+      {
+        "amount": "2-3 cdas",
+        "name": "leche de avena (glaseado)"
+      },
+      {
+        "amount": "½ cdta",
+        "name": "extracto de vainilla (glaseado)"
+      }
     ],
     "steps": [
       "Mezcla leche, mantequilla y azúcar. Debe estar apenas tibia. Espolvorea la levadura y deja reposar 1 minuto.",
@@ -84,7 +170,7 @@
       "Hornea 25-30 minutos hasta que estén dorados.",
       "Mezcla los ingredientes del glaseado y viértelo sobre los rolls todavía calientes."
     ],
-    "tips": "Las mantequillas vegetales en barra (Violife, Naturli) funcionan mejor que las de tarrina. El glaseado puede hacerse más espeso o líquido ajustando la leche."
+    "tips": "Las mantequillas vegetales en barra (Violife, Naturli) funcionan mejor que las de tarrina. El glaseado puede hacerse más espeso o líquido ajustando la leche de avena."
   },
   {
     "id": 3,
@@ -100,20 +186,60 @@
     "servings": "9 grandes / 12 normales",
     "difficulty": "Fácil",
     "diet": null,
-    "tags": ["cookies", "chocolate"],
-    "allergens": ["gluten", "lacteos", "huevos"],
+    "tags": [
+      "cookies",
+      "chocolate"
+    ],
+    "allergens": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
     "ingredients": [
-      { "amount": "170 g", "name": "harina de trigo" },
-      { "amount": "½ cdta", "name": "bicarbonato sódico" },
-      { "amount": "½ cdta", "name": "levadura química" },
-      { "amount": "¾ cdta", "name": "sal kosher" },
-      { "amount": "112 g", "name": "mantequilla sin sal, derretida y templada" },
-      { "amount": "100 g", "name": "azúcar moreno claro" },
-      { "amount": "70 g", "name": "azúcar blanco" },
-      { "amount": "2 cdtas", "name": "extracto de vainilla" },
-      { "amount": "1", "name": "huevo L" },
-      { "amount": "250 g", "name": "pepitas de chocolate semidulce" },
-      { "amount": "al gusto", "name": "sal en escamas para terminar" }
+      {
+        "amount": "170 g",
+        "name": "harina de trigo"
+      },
+      {
+        "amount": "½ cdta",
+        "name": "bicarbonato sódico"
+      },
+      {
+        "amount": "½ cdta",
+        "name": "levadura química"
+      },
+      {
+        "amount": "¾ cdta",
+        "name": "sal kosher"
+      },
+      {
+        "amount": "112 g",
+        "name": "mantequilla sin sal, derretida y templada"
+      },
+      {
+        "amount": "100 g",
+        "name": "azúcar moreno claro"
+      },
+      {
+        "amount": "70 g",
+        "name": "azúcar blanco"
+      },
+      {
+        "amount": "2 cdtas",
+        "name": "extracto de vainilla"
+      },
+      {
+        "amount": "1",
+        "name": "huevo L"
+      },
+      {
+        "amount": "250 g",
+        "name": "pepitas de chocolate semidulce"
+      },
+      {
+        "amount": "al gusto",
+        "name": "sal en escamas para terminar"
+      }
     ],
     "steps": [
       "Precalienta el horno a 175 °C. Cubre una bandeja con papel de horno.",
@@ -142,14 +268,34 @@
     "servings": "1 hogaza",
     "difficulty": "Difícil",
     "diet": "vegano",
-    "tags": ["pan", "masa madre"],
-    "allergens": ["gluten"],
+    "tags": [
+      "pan",
+      "masa madre"
+    ],
+    "allergens": [
+      "gluten"
+    ],
     "ingredients": [
-      { "amount": "450 g", "name": "harina panadera (W200 o superior)" },
-      { "amount": "50 g", "name": "harina integral de trigo" },
-      { "amount": "375 g", "name": "agua (75% de hidratación)" },
-      { "amount": "100 g", "name": "masa madre activa (hidratación 100%)" },
-      { "amount": "10 g", "name": "sal" }
+      {
+        "amount": "450 g",
+        "name": "harina panadera (W200 o superior)"
+      },
+      {
+        "amount": "50 g",
+        "name": "harina integral de trigo"
+      },
+      {
+        "amount": "375 g",
+        "name": "agua (75% de hidratación)"
+      },
+      {
+        "amount": "100 g",
+        "name": "masa madre activa (hidratación 100%)"
+      },
+      {
+        "amount": "10 g",
+        "name": "sal"
+      }
     ],
     "steps": [
       "Mezcla las harinas con 350 g de agua (guarda 25 g para después). Deja reposar 1 hora (autólisis).",
