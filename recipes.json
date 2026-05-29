@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1,
+    "name": "Galletas de Mantequilla",
+    "category": "Repostería",
+    "description": "Las clásicas galletas de mantequilla que se deshacen en la boca. Perfectas para acompañar el té o regalar en Navidad.",
+    "emoji": "🍪",
+    "color": "#f5e6c8",
+    "accent": "#c8894a",
+    "prepTime": "20 min",
+    "cookTime": "12 min",
+    "totalTime": "32 min",
+    "servings": "30 uds",
+    "difficulty": "Fácil",
+    "tags": ["galletas", "repostería", "fácil", "navidad"],
+    "ingredients": [
+      { "amount": "250 g", "name": "mantequilla a temperatura ambiente" },
+      { "amount": "120 g", "name": "azúcar glass" },
+      { "amount": "2",     "name": "yemas de huevo" },
+      { "amount": "1 cdta","name": "extracto de vainilla" },
+      { "amount": "350 g", "name": "harina de trigo" },
+      { "amount": "1 pizca","name": "sal" }
+    ],
+    "steps": [
+      "Bate la mantequilla con el azúcar glass a velocidad media hasta obtener una crema pálida y esponjosa, unos 3-4 minutos.",
+      "Añade las yemas de una en una, incorporando bien cada una antes de agregar la siguiente. Agrega la vainilla.",
+      "Tamiza la harina junto con la sal y agrégala en dos veces, mezclando con espátula justo hasta integrar. No amases en exceso.",
+      "Forma un disco, envuelve en film y refrigera al menos 1 hora (o hasta 2 días).",
+      "Precalienta el horno a 175 °C. Estira la masa a 4 mm de grosor sobre papel de horno y corta las formas deseadas.",
+      "Hornea 10-12 minutos hasta que los bordes empiecen a dorarse ligeramente. Deja enfriar en la bandeja 5 minutos antes de trasladar a rejilla."
+    ],
+    "tips": "Para galletas decoradas con glaseado, guárdalas en capas separadas con papel sulfurizado. Se conservan 2 semanas en lata hermética."
+  },
+  {
+    "id": 2,
+    "name": "Cinnamon Rolls",
+    "category": "Bollería",
+    "description": "Rollos esponjosos de canela con glaseado de queso crema. El desayuno de los domingos más esperado del año.",
+    "emoji": "🌀",
+    "color": "#e8d5b7",
+    "accent": "#9b6330",
+    "prepTime": "30 min",
+    "cookTime": "25 min",
+    "totalTime": "2 h 55 min",
+    "servings": "12 uds",
+    "difficulty": "Media",
+    "tags": ["bollería", "repostería", "canela", "domingo", "levadura"],
+    "ingredients": [
+      { "amount": "480 ml", "name": "leche entera tibia (37 °C)" },
+      { "amount": "7 g",    "name": "levadura seca de panadería" },
+      { "amount": "100 g",  "name": "azúcar blanco" },
+      { "amount": "2",      "name": "huevos L" },
+      { "amount": "80 g",   "name": "mantequilla derretida (masa)" },
+      { "amount": "780 g",  "name": "harina de fuerza" },
+      { "amount": "1 cdta", "name": "sal" },
+      { "amount": "120 g",  "name": "mantequilla blanda (relleno)" },
+      { "amount": "150 g",  "name": "azúcar moreno (relleno)" },
+      { "amount": "2 cdas", "name": "canela molida" },
+      { "amount": "200 g",  "name": "queso crema (glaseado)" },
+      { "amount": "100 g",  "name": "azúcar glass (glaseado)" },
+      { "amount": "2 cdas", "name": "mantequilla blanda (glaseado)" },
+      { "amount": "1 cdta", "name": "vainilla (glaseado)" }
+    ],
+    "steps": [
+      "Disuelve la levadura en la leche tibia con 1 cdta de azúcar. Espera 10 min hasta que espume.",
+      "En un bol grande mezcla la harina, el azúcar restante y la sal. Haz un hueco y añade la mezcla de levadura, los huevos y la mantequilla derretida.",
+      "Amasa a mano 10 min o con amasadora 6 min hasta obtener una masa lisa y ligeramente pegajosa. Forma una bola.",
+      "Coloca en un bol engrasado, cubre con film y deja levar 1,5 h en un lugar cálido, hasta doblar su volumen.",
+      "Mezcla la mantequilla blanda, el azúcar moreno y la canela para el relleno. Reserva.",
+      "Desgasifica la masa y estírala en un rectángulo de 40×60 cm. Unta el relleno uniformemente dejando 1 cm en el borde largo.",
+      "Enrolla con firmeza desde el lado largo. Corta en 12 porciones iguales con hilo o cuchillo afilado.",
+      "Coloca los rollos en una fuente engrasada (30×40 cm), deja 1 cm de separación. Cubre y deja levar 30-45 min más.",
+      "Hornea a 175 °C durante 23-25 min, hasta que estén dorados. Deja templar 10 minutos.",
+      "Bate los ingredientes del glaseado hasta obtener una crema suave y viértela sobre los rolls todavía tibios."
+    ],
+    "tips": "Para prepararlos la noche anterior: tras cortar los rollos, tápalos y refrigéralos. Sácalos 45 min antes de hornear para que atemperen y terminen el levado."
+  }
+]
