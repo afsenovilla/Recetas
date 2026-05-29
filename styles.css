@@ -564,6 +564,19 @@ body {
   transition: background 0.15s;
 }
 .btn-edit:hover { background: var(--border); }
+.btn-translate {
+  width: 46px;
+  height: 46px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s;
+}
+.btn-translate:disabled { opacity: 0.5; cursor: wait; }
 .btn-delete {
   width: 46px;
   height: 46px;

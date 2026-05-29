@@ -426,6 +426,7 @@ function openDetail(id) {
     ${r.tips ? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
     <div class="detail-actions">
       <button class="btn-edit" id="btn-edit-${id}" type="button">✏️ Editar receta</button>
+      <button class="btn-translate" id="btn-translate-${id}" type="button" title="Traducir al inglés">🇬🇧</button>
       <button class="btn-delete" id="btn-delete-${id}" type="button">🗑</button>
     </div>`;
 
@@ -449,9 +450,139 @@ function openDetail(id) {
   });
 
   document.getElementById(`btn-edit-${id}`).addEventListener('click', () => editRecipe(id));
+  document.getElementById(`btn-translate-${id}`).addEventListener('click', () => translateDetail(id));
   document.getElementById(`btn-delete-${id}`).addEventListener('click', () => askDelete(id));
 
   openSheet('detail-sheet');
+}
+
+/* ── TRANSLATION (Google Translate unofficial API) ──────── */
+const translationCache = {};
+
+async function gtranslate(text, target='en') {
+  if (!text || !text.trim()) return text;
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=${target}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  // Response is nested arrays: [[["translated","original",...],...],...]
+  return data[0].map(chunk => chunk[0]).join('');
+}
+
+async function translateStrings(strings) {
+  // Batch: join with a separator unlikely to appear in recipes, translate once
+  const SEP = ' ||| ';
+  const joined = strings.join(SEP);
+  const translated = await gtranslate(joined);
+  return translated.split(SEP).map(s => s.trim());
+}
+
+async function translateDetail(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r) return;
+  const btn = document.getElementById(`btn-translate-${id}`);
+
+  // Toggle back to Spanish
+  if (btn.dataset.mode === 'en') {
+    btn.dataset.mode = 'es';
+    btn.textContent = '🇬🇧';
+    btn.title = 'Translate to English';
+    openDetail(id);
+    return;
+  }
+
+  // Use cache
+  if (translationCache[id]) {
+    applyTranslation(id, translationCache[id]);
+    return;
+  }
+
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  try {
+    // Collect all strings to translate in one batch
+    const ingNames  = (r.ingredients || []).map(i => i.name);
+    const steps     = r.steps || [];
+
+    const allStrings = [
+      r.name,
+      r.description || '',
+      r.category || '',
+      r.difficulty || '',
+      r.tips || '',
+      ...ingNames,
+      ...steps,
+    ];
+
+    const results = await translateStrings(allStrings);
+
+    let i = 0;
+    const t = {
+      name:        results[i++],
+      description: results[i++],
+      category:    results[i++],
+      difficulty:  results[i++],
+      tips:        results[i++],
+      ingNames:    ingNames.map(() => results[i++]),
+      steps:       steps.map(() => results[i++]),
+    };
+
+    translationCache[id] = t;
+    applyTranslation(id, t);
+
+  } catch(e) {
+    btn.textContent = '🇬🇧';
+    btn.disabled = false;
+    showToast('Translation failed — check your connection');
+  }
+}
+
+function applyTranslation(id, t) {
+  const titleEl = document.querySelector('#detail-inner .detail-title');
+  const descEl  = document.querySelector('#detail-inner .detail-desc');
+  const catEl   = document.querySelector('#detail-inner .detail-cat');
+
+  if (titleEl) titleEl.textContent = t.name;
+  if (descEl)  descEl.textContent  = t.description;
+  if (catEl)   catEl.textContent   = t.category;
+
+  document.querySelectorAll('#detail-inner .ing-name-text').forEach((el, i) => {
+    if (t.ingNames?.[i] != null) el.textContent = t.ingNames[i];
+  });
+
+  document.querySelectorAll('#detail-inner .step-text').forEach((el, i) => {
+    if (t.steps?.[i] != null) el.textContent = t.steps[i];
+  });
+
+  const tipsEl = document.querySelector('#detail-inner .tips-box');
+  if (tipsEl && t.tips) tipsEl.textContent = t.tips;
+
+  document.querySelectorAll('#detail-inner .sec-title').forEach(el => {
+    const txt = el.textContent.trim();
+    if (txt === 'Ingredientes') el.textContent = 'Ingredients';
+    if (txt === 'Elaboración')  el.textContent = 'Preparation';
+    if (txt === 'Consejo')      el.textContent = 'Tip';
+  });
+
+  const diffEl = document.querySelector('#detail-inner .dstat-val');
+  // difficulty is the 4th dstat — find by label
+  document.querySelectorAll('#detail-inner .dstat').forEach(ds => {
+    const lbl = ds.querySelector('.dstat-lbl');
+    if (lbl && lbl.textContent.trim() === 'Nivel') {
+      lbl.textContent = 'Level';
+      const val = ds.querySelector('.dstat-val');
+      if (val && t.difficulty) val.textContent = t.difficulty;
+    }
+    if (lbl && lbl.textContent.trim() === 'Prep.') lbl.textContent = 'Prep.';
+    if (lbl && lbl.textContent.trim() === 'Cocción') lbl.textContent = 'Cook';
+    if (lbl && lbl.textContent.trim() === 'Raciones') lbl.textContent = 'Servings';
+  });
+
+  const btn = document.getElementById(`btn-translate-${id}`);
+  btn.textContent = '🇪🇸';
+  btn.title = 'Volver al español';
+  btn.dataset.mode = 'en';
+  btn.disabled = false;
 }
 
 function newRecipeWithAuth() {
