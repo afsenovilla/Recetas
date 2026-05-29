@@ -36,7 +36,7 @@
 <main class="recipe-page" id="recipe-page"></main>
 
 <!-- ══ FAB ═════════════════════════════════════════════════ -->
-<button class="fab" onclick="openForm(null)">
+<button class="fab" onclick="newRecipeWithAuth()">
   <span class="fab-plus">+</span> Nueva receta
 </button>
 
@@ -454,6 +454,13 @@ function openDetail(id) {
   openSheet('detail-sheet');
 }
 
+function newRecipeWithAuth() {
+  const pwd = prompt('Introduce la contraseña para añadir una receta:');
+  if (pwd === null) return;
+  if (pwd !== '1234') { showToast('Contraseña incorrecta'); return; }
+  openForm(null);
+}
+
 /* ── EDIT with password ─────────────────────────────────── */
 function editRecipe(id) {
   const pwd = prompt('Introduce la contraseña para editar:');
@@ -467,6 +474,9 @@ function editRecipe(id) {
 }
 
 function askDelete(id) {
+  const pwd = prompt('Introduce la contraseña para eliminar:');
+  if (pwd === null) return;
+  if (pwd !== '1234') { showToast('Contraseña incorrecta'); return; }
   const r = recipes.find(x => x.id === id);
   if (!confirm(`¿Eliminar "${r.name}" de forma permanente?`)) return;
   recipes = recipes.filter(x => x.id !== id);
