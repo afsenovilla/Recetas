@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#f7f2ea" />
-  <title>Mi Recetario</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f5efe6" />
+<title>Mi Recetario</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
@@ -16,9 +16,8 @@
     <span class="logo-sub">cocina con amor</span>
   </div>
   <div class="header-right">
-    <button class="btn-circle" onclick="document.getElementById('search').focus()" aria-label="Buscar">
-      🔍
-    </button>
+    <button class="btn-circle theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema" id="theme-btn">🌙</button>
+    <button class="btn-circle" onclick="document.getElementById('search').focus()" aria-label="Buscar">🔍</button>
   </div>
 </header>
 
@@ -26,18 +25,16 @@
 <div class="filter-bar">
   <div class="search-wrap">
     <span class="ico-search">🔍</span>
-    <input type="search" id="search" placeholder="Buscar recetas…" oninput="renderBento()" autocomplete="off" />
+    <input type="search" id="search" placeholder="Buscar recetas…" oninput="renderCards()" autocomplete="off" />
   </div>
-  <div class="chips-row" id="chips">
-    <button class="chip active" data-tag="todos" onclick="setChip(this)">Todas</button>
-  </div>
+  <div class="chips-row" id="chips"></div>
 </div>
 
-<!-- ══ BENTO CANVAS ════════════════════════════════════════ -->
-<main class="bento-page" id="bento-page"></main>
+<!-- ══ MAIN CANVAS ═════════════════════════════════════════ -->
+<main class="recipe-page" id="recipe-page"></main>
 
 <!-- ══ FAB ═════════════════════════════════════════════════ -->
-<button class="fab" onclick="openForm()">
+<button class="fab" onclick="openForm(null)">
   <span class="fab-plus">+</span> Nueva receta
 </button>
 
@@ -54,10 +51,11 @@
 <div class="sheet" id="form-sheet">
   <div class="sheet-handle"></div>
   <div class="form-header">
-    <span class="form-header-title">Nueva receta</span>
+    <span class="form-header-title" id="form-title">Nueva receta</span>
     <button class="btn-close" onclick="closeAll()">✕</button>
   </div>
   <div class="form-body">
+    <input type="hidden" id="f-id" value="" />
     <div class="f-group">
       <label class="f-label">Nombre *</label>
       <input class="f-input" id="f-name" placeholder="Ej: Tarta de manzana" />
@@ -107,11 +105,11 @@
       </div>
       <div class="f-group">
         <label class="f-label">Color fondo</label>
-        <input type="color" class="f-input" id="f-color" value="#f5e6c8" style="height:42px;padding:4px 8px;cursor:pointer" />
+        <input type="color" class="f-input" id="f-color" value="#f5e0c0" style="height:42px;padding:4px 8px;cursor:pointer" />
       </div>
     </div>
     <div class="f-group">
-      <label class="f-label">Etiquetas (coma)</label>
+      <label class="f-label">Etiquetas (separadas por coma)</label>
       <input class="f-input" id="f-tags" placeholder="fácil, repostería, merienda" />
     </div>
     <div class="f-group">
@@ -126,9 +124,22 @@
     </div>
     <div class="f-group">
       <label class="f-label">Consejo (opcional)</label>
-      <textarea class="f-textarea" id="f-tips" placeholder="Trucos, variaciones…"></textarea>
+      <textarea class="f-textarea" id="f-tips" placeholder="Trucos, variaciones, conservación…"></textarea>
     </div>
     <button class="btn-submit" onclick="saveRecipe()">Guardar receta</button>
+  </div>
+</div>
+
+<!-- ══ CONFIRM DIALOG ══════════════════════════════════════ -->
+<div class="confirm-backdrop" id="confirm-backdrop">
+  <div class="confirm-box">
+    <div class="confirm-icon" id="confirm-icon">✏️</div>
+    <div class="confirm-title" id="confirm-title">¿Editar receta?</div>
+    <div class="confirm-msg" id="confirm-msg">Vas a editar esta receta. Los cambios reemplazarán la versión actual.</div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="confirm-ok" id="confirm-ok-btn" onclick="confirmAction()">Continuar</button>
+    </div>
   </div>
 </div>
 
@@ -137,49 +148,59 @@
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
 <script>
-/* ──────────────────────────────────────────────────────────
-   STATE
-────────────────────────────────────────────────────────── */
-let recipes = [];
+/* ── STATE ─────────────────────────────────────────────── */
+let recipes   = [];
 let activeTag = 'todos';
-let checked = {};   // { recipeId: { ingIdx: bool } }
-let done    = {};   // { recipeId: { stepIdx: bool } }
+let checked   = {};   // { recipeId: { ingIdx: bool } }
+let done      = {};   // { recipeId: { stepIdx: bool } }
+let pendingAction = null; // function to call after confirm
 
-/* ──────────────────────────────────────────────────────────
-   BOOT — fetch JSON, then render
-────────────────────────────────────────────────────────── */
+/* ── THEME ─────────────────────────────────────────────── */
+function applyTheme(dark) {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = dark ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#1a1209' : '#f5efe6';
+}
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+  localStorage.setItem('theme', dark ? 'dark' : 'light');
+  applyTheme(dark);
+}
+
+/* ── BOOT ───────────────────────────────────────────────── */
 async function boot() {
-  const stored = localStorage.getItem('recetario_v2');
+  // Theme
+  const saved = localStorage.getItem('theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyTheme(saved ? saved === 'dark' : prefersDark);
+
+  // Recipes
+  const stored = localStorage.getItem('recetario_v3');
   if (stored) {
     recipes = JSON.parse(stored);
   } else {
     try {
-      const res  = await fetch('recipes.json');
-      const seed = await res.json();
-      recipes = seed;
+      const res = await fetch('recipes.json');
+      recipes = await res.json();
       persist();
-    } catch(e) {
-      recipes = [];
-    }
+    } catch(e) { recipes = []; }
   }
+
   rebuildChips();
-  renderBento();
+  renderCards();
 }
 
 function persist() {
-  localStorage.setItem('recetario_v2', JSON.stringify(recipes));
+  localStorage.setItem('recetario_v3', JSON.stringify(recipes));
 }
 
-/* ──────────────────────────────────────────────────────────
-   CHIPS
-────────────────────────────────────────────────────────── */
+/* ── CHIPS ──────────────────────────────────────────────── */
 function rebuildChips() {
   const all = new Set();
   recipes.forEach(r => (r.tags||[]).forEach(t => all.add(t)));
   const container = document.getElementById('chips');
   container.innerHTML = '';
-  const fixed = ['todos', ...all];
-  fixed.forEach(tag => {
+  ['todos', ...all].forEach(tag => {
     const btn = document.createElement('button');
     btn.className = 'chip' + (tag === activeTag ? ' active' : '');
     btn.dataset.tag = tag;
@@ -193,14 +214,12 @@ function setChip(el) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeTag = el.dataset.tag;
-  renderBento();
+  renderCards();
 }
 
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-/* ──────────────────────────────────────────────────────────
-   BENTO RENDER
-────────────────────────────────────────────────────────── */
+/* ── FILTER ─────────────────────────────────────────────── */
 function filterRecipes() {
   const q = (document.getElementById('search').value || '').trim().toLowerCase();
   let list = recipes;
@@ -213,8 +232,9 @@ function filterRecipes() {
   return list;
 }
 
-function renderBento() {
-  const page = document.getElementById('bento-page');
+/* ── RENDER CARDS ───────────────────────────────────────── */
+function renderCards() {
+  const page = document.getElementById('recipe-page');
   const list = filterRecipes();
 
   if (list.length === 0) {
@@ -226,131 +246,49 @@ function renderBento() {
     return;
   }
 
-  let html = '';
-
+  page.innerHTML = '';
   list.forEach((r, i) => {
-    const bg = r.color || '#f5e6c8';
-
+    const delay = i * 60;
     if (i === 0) {
-      /* ── FIRST RECIPE: full-width hero + stats row ── */
-      html += `
-      <!-- Hero -->
-      <div class="bento-row">
-        <div class="b-cell cell-hero b-fill b-h260" style="background:${bg}" onclick="openDetail(${r.id})">
-          <div class="hero-emoji-bg" style="background:${bg}">${r.emoji||'🍽️'}</div>
-          <div class="hero-body">
-            <div class="hero-cat">${r.category||''}</div>
-            <h2 class="hero-title">${r.name}</h2>
-            <div class="hero-meta">
-              <span>⏱ ${r.prepTime}</span>
-              <span>🔥 ${r.cookTime}</span>
-              <span>🍽 ${r.servings}</span>
+      // Hero card
+      page.innerHTML += `
+        <div class="recipe-card card-hero" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
+          <div class="card-color-band" style="background:${r.color}"></div>
+          <div class="card-body">
+            <div class="card-cat">${r.category||''}</div>
+            <h2 class="card-title">${r.name}</h2>
+            ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
+            <div class="card-meta">
+              <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
+              <span class="meta-item"><span class="meta-icon">🔥</span>${r.cookTime}</span>
+              <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
+              <span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty||'—'}</span>
+            </div>
+            <div class="card-tags">
+              ${(r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('')}
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Stats row for hero recipe -->
-      <div class="bento-row">
-        <div class="b-cell cell-stat b-fill b-h120" style="background:${bg}20" onclick="openDetail(${r.id})">
-          <span class="st-icon">⏱</span>
-          <span class="st-val">${r.prepTime}</span>
-          <span class="st-lbl">Preparación</span>
-        </div>
-        <div class="b-cell cell-stat b-fill b-h120" style="background:${bg}30" onclick="openDetail(${r.id})">
-          <span class="st-icon">🔥</span>
-          <span class="st-val">${r.cookTime}</span>
-          <span class="st-lbl">Cocción</span>
-        </div>
-        <div class="b-cell cell-diff b-fill b-h120" onclick="openDetail(${r.id})">
-          <span class="diff-label">Dificultad</span>
-          <span class="diff-val">${r.difficulty||'—'}</span>
-          ${diffDots(r.difficulty)}
-        </div>
-      </div>
-
-      <!-- Tip + tags row for hero recipe -->
-      <div class="bento-row">
-        ${r.tips ? `
-        <div class="b-cell cell-tip b-w60 b-h150" onclick="openDetail(${r.id})">
-          <span class="tip-icon">💡</span>
-          <span class="tip-label">Consejo</span>
-          <p class="tip-text">${truncate(r.tips, 90)}</p>
-        </div>` : `
-        <div class="b-cell cell-ingcount b-w60 b-h150" onclick="openDetail(${r.id})">
-          <span class="ic-num">${(r.ingredients||[]).length}</span>
-          <span class="ic-lbl">Ingredientes</span>
-        </div>`}
-        <div class="b-cell cell-tags b-fill b-h150" onclick="openDetail(${r.id})">
-          ${(r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('')}
-        </div>
-      </div>`;
-
-    } else if (i % 3 === 1) {
-      /* ── ODD PAIRS: emoji square + title tall ── */
-      const next = list[i+1];
-      html += `<div class="bento-row">
-        <!-- Left column: emoji + stat stacked -->
-        <div style="display:flex;flex-direction:column;gap:10px;width:42%;flex-shrink:0">
-          <div class="b-cell cell-emoji b-h150" style="background:${bg}" onclick="openDetail(${r.id})">${r.emoji||'🍽️'}</div>
-          <div class="b-cell cell-ingcount b-h120" onclick="openDetail(${r.id})">
-            <span class="ic-num">${(r.ingredients||[]).length}</span>
-            <span class="ic-lbl">ingredientes</span>
+        </div>`;
+    } else {
+      // Standard card
+      page.innerHTML += `
+        <div class="recipe-card card-standard" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
+          <div class="card-emoji-col" style="background:${r.color}20">${r.emoji||'🍽️'}</div>
+          <div class="card-body">
+            <div class="card-cat">${r.category||''}</div>
+            <div class="card-title">${r.name}</div>
+            ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
+            <div class="card-meta">
+              <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
+              <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
+            </div>
           </div>
-        </div>
-        <!-- Right: title card tall -->
-        <div class="b-cell cell-title b-fill b-h280" onclick="openDetail(${r.id})" style="background:${bg}40">
-          <div class="ct-cat">${r.category||''}</div>
-          <div class="ct-name">${r.name}</div>
-          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
-            ${(r.tags||[]).slice(0,3).map(t=>`<span class="ctag">${t}</span>`).join('')}
-          </div>
-        </div>
-      </div>`;
-
-    } else if (i % 3 === 2) {
-      /* ── EVERY 3RD: small stats duo ── */
-      html += `
-      <div class="bento-row">
-        <div class="b-cell cell-stat b-fill b-h120" style="background:${bg}25" onclick="openDetail(${r.id})">
-          <span class="st-icon">⏱</span>
-          <span class="st-val">${r.prepTime}</span>
-          <span class="st-lbl">Prep.</span>
-        </div>
-        <div class="b-cell cell-stat b-fill b-h120" style="background:${bg}40" onclick="openDetail(${r.id})">
-          <span class="st-icon">🍽</span>
-          <span class="st-val">${r.servings}</span>
-          <span class="st-lbl">Raciones</span>
-        </div>
-      </div>`;
+        </div>`;
     }
   });
-
-  /* CTA card — always at the end */
-  html += `
-  <div class="bento-row">
-    <div class="b-cell cell-cta b-fill b-h120" onclick="openForm()">
-      <span class="cta-plus">+</span>
-      <span class="cta-text">Nueva receta</span>
-    </div>
-  </div>`;
-
-  page.innerHTML = html;
 }
 
-function diffDots(d) {
-  const levels = { 'Fácil': 1, 'Media': 2, 'Difícil': 3 };
-  const n = levels[d] || 1;
-  return `<div class="diff-dots">${[1,2,3].map(i=>`<span class="diff-dot ${i<=n?'on':''}"></span>`).join('')}</div>`;
-}
-
-function truncate(s, n) {
-  return s.length > n ? s.slice(0, n) + '…' : s;
-}
-
-/* ──────────────────────────────────────────────────────────
-   DETAIL SHEET
-────────────────────────────────────────────────────────── */
+/* ── DETAIL SHEET ───────────────────────────────────────── */
 function openDetail(id) {
   const r = recipes.find(x => x.id === id);
   if (!r) return;
@@ -371,19 +309,25 @@ function openDetail(id) {
     </li>`).join('');
 
   document.getElementById('detail-inner').innerHTML = `
-    <div class="detail-hero-emoji" style="background:${r.color||'#f5e6c8'}">${r.emoji||'🍽️'}</div>
+    <div class="detail-color-band" style="background:${r.color}"></div>
+    <div class="detail-emoji">${r.emoji||'🍽️'}</div>
     <div class="detail-body">
       <div class="detail-cat">${r.category||''}</div>
       <h1 class="detail-title">${r.name}</h1>
       ${r.description ? `<p class="detail-desc">${r.description}</p>` : ''}
-      <div class="detail-bento">
+      <div class="detail-stats">
         <div class="dstat"><span class="dstat-icon">⏱</span><span class="dstat-val">${r.prepTime}</span><span class="dstat-lbl">Prep.</span></div>
         <div class="dstat"><span class="dstat-icon">🔥</span><span class="dstat-val">${r.cookTime}</span><span class="dstat-lbl">Cocción</span></div>
         <div class="dstat"><span class="dstat-icon">🍽</span><span class="dstat-val">${r.servings}</span><span class="dstat-lbl">Raciones</span></div>
+        <div class="dstat"><span class="dstat-icon">📊</span><span class="dstat-val">${r.difficulty||'—'}</span><span class="dstat-lbl">Nivel</span></div>
       </div>
-      ${ings   ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ings}</ul>` : ''}
-      ${steps  ? `<h3 class="sec-title">Elaboración</h3><ol class="steps-list">${steps}</ol>` : ''}
-      ${r.tips ? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
+      ${ings  ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ings}</ul>` : ''}
+      ${steps ? `<h3 class="sec-title">Elaboración</h3><ol class="steps-list">${steps}</ol>` : ''}
+      ${r.tips? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
+      <div class="detail-actions">
+        <button class="btn-edit" onclick="askEdit(${id})">✏️ Editar receta</button>
+        <button class="btn-delete" onclick="askDelete(${id})">🗑</button>
+      </div>
     </div>`;
 
   openSheet('detail-sheet');
@@ -398,43 +342,117 @@ function toggleStep(rid, idx, el) {
   el.classList.toggle('done', done[rid][idx]);
 }
 
-/* ──────────────────────────────────────────────────────────
-   FORM
-────────────────────────────────────────────────────────── */
-function openForm() {
-  resetForm();
-  openSheet('form-sheet');
+/* ── CONFIRM DIALOG ─────────────────────────────────────── */
+function showConfirm({icon, title, msg, okLabel='Continuar', danger=false, onOk}) {
+  document.getElementById('confirm-icon').textContent   = icon;
+  document.getElementById('confirm-title').textContent  = title;
+  document.getElementById('confirm-msg').textContent    = msg;
+  const okBtn = document.getElementById('confirm-ok-btn');
+  okBtn.textContent = okLabel;
+  okBtn.className   = 'confirm-ok' + (danger ? ' danger' : '');
+  pendingAction = onOk;
+  document.getElementById('confirm-backdrop').classList.add('open');
 }
 
-function resetForm() {
-  ['f-name','f-desc','f-emoji','f-cat','f-prep','f-cook','f-total','f-servings','f-tags','f-tips'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.value = '';
+function closeConfirm() {
+  document.getElementById('confirm-backdrop').classList.remove('open');
+  pendingAction = null;
+}
+
+function confirmAction() {
+  closeConfirm();
+  if (pendingAction) pendingAction();
+}
+
+/* ── EDIT RECIPE ────────────────────────────────────────── */
+function askEdit(id) {
+  const r = recipes.find(x => x.id === id);
+  showConfirm({
+    icon: '✏️',
+    title: '¿Editar receta?',
+    msg: `Vas a editar "${r.name}". Los cambios reemplazarán la versión actual.`,
+    okLabel: 'Editar',
+    danger: false,
+    onOk: () => {
+      closeAll();
+      setTimeout(() => openForm(id), 100);
+    }
   });
-  document.getElementById('f-color').value = '#f5e6c8';
-  document.getElementById('f-diff').value  = 'Fácil';
+}
+
+/* ── DELETE RECIPE ──────────────────────────────────────── */
+function askDelete(id) {
+  const r = recipes.find(x => x.id === id);
+  showConfirm({
+    icon: '🗑️',
+    title: '¿Eliminar receta?',
+    msg: `Vas a eliminar "${r.name}" de forma permanente. Esta acción no se puede deshacer.`,
+    okLabel: 'Eliminar',
+    danger: true,
+    onOk: () => {
+      recipes = recipes.filter(x => x.id !== id);
+      persist();
+      rebuildChips();
+      closeAll();
+      renderCards();
+      showToast('Receta eliminada');
+    }
+  });
+}
+
+/* ── FORM ───────────────────────────────────────────────── */
+function openForm(editId) {
+  const r = editId ? recipes.find(x => x.id === editId) : null;
+  document.getElementById('form-title').textContent = r ? 'Editar receta' : 'Nueva receta';
+  document.getElementById('f-id').value = r ? r.id : '';
+
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val||''; };
+  set('f-name',     r ? r.name        : '');
+  set('f-desc',     r ? r.description : '');
+  set('f-emoji',    r ? r.emoji       : '');
+  set('f-cat',      r ? r.category    : '');
+  set('f-prep',     r ? r.prepTime    : '');
+  set('f-cook',     r ? r.cookTime    : '');
+  set('f-total',    r ? r.totalTime   : '');
+  set('f-servings', r ? r.servings    : '');
+  set('f-tips',     r ? r.tips        : '');
+  document.getElementById('f-diff').value  = r ? (r.difficulty||'Fácil')     : 'Fácil';
+  document.getElementById('f-color').value = r ? (r.color||'#f5e0c0')         : '#f5e0c0';
+  document.getElementById('f-tags').value  = r ? (r.tags||[]).join(', ')       : '';
+
   document.getElementById('ing-list').innerHTML  = '';
   document.getElementById('step-list').innerHTML = '';
-  addIng(); addIng(); addIng();
-  addStep(); addStep();
+
+  if (r) {
+    (r.ingredients||[]).forEach(ing => addIng(ing.amount, ing.name));
+    (r.steps||[]).forEach(s => addStep(s));
+  } else {
+    addIng(); addIng(); addIng();
+    addStep(); addStep();
+  }
+
+  openSheet('form-sheet');
 }
 
 function addIng(amount='', name='') {
   const el = document.createElement('div');
   el.className = 'ing-dyn';
-  el.innerHTML = `<input class="f-input" placeholder="100 g" value="${amount}" />
-    <input class="f-input" placeholder="ingrediente" value="${name}" />
-    <button class="btn-rm" onclick="this.parentElement.remove()">✕</button>`;
+  el.innerHTML = `<input class="f-input" placeholder="100 g" value="${escAttr(amount)}" />
+    <input class="f-input" placeholder="ingrediente" value="${escAttr(name)}" />
+    <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
   document.getElementById('ing-list').appendChild(el);
 }
 
 function addStep(val='') {
-  const n  = document.getElementById('step-list').children.length + 1;
+  const n = document.getElementById('step-list').children.length + 1;
   const el = document.createElement('div');
   el.className = 'dyn-item';
-  el.innerHTML = `<input class="f-input" placeholder="Paso ${n}…" value="${val}" style="flex:1" />
-    <button class="btn-rm" onclick="this.parentElement.remove()">✕</button>`;
+  el.innerHTML = `<input class="f-input" placeholder="Paso ${n}…" value="${escAttr(val)}" style="flex:1" />
+    <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
   document.getElementById('step-list').appendChild(el);
 }
+
+function escAttr(s) { return (s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 
 function saveRecipe() {
   const name = document.getElementById('f-name').value.trim();
@@ -450,32 +468,40 @@ function saveRecipe() {
 
   const tags = document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
 
-  recipes.unshift({
-    id:          Date.now(),
+  const editId = document.getElementById('f-id').value;
+
+  const recipe = {
+    id:          editId ? parseInt(editId) : Date.now(),
     name,
     description: document.getElementById('f-desc').value.trim(),
     emoji:       document.getElementById('f-emoji').value.trim() || '🍽️',
-    category:    document.getElementById('f-cat').value.trim()  || 'Sin categoría',
-    prepTime:    document.getElementById('f-prep').value.trim() || '—',
-    cookTime:    document.getElementById('f-cook').value.trim() || '—',
-    totalTime:   document.getElementById('f-total').value.trim()|| '—',
+    category:    document.getElementById('f-cat').value.trim()   || 'Sin categoría',
+    prepTime:    document.getElementById('f-prep').value.trim()  || '—',
+    cookTime:    document.getElementById('f-cook').value.trim()  || '—',
+    totalTime:   document.getElementById('f-total').value.trim() || '—',
     servings:    document.getElementById('f-servings').value.trim() || '—',
     difficulty:  document.getElementById('f-diff').value,
     color:       document.getElementById('f-color').value,
     tags, ingredients, steps,
-    tips: document.getElementById('f-tips').value.trim(),
-  });
+    tips:        document.getElementById('f-tips').value.trim(),
+  };
+
+  if (editId) {
+    const idx = recipes.findIndex(x => x.id === parseInt(editId));
+    if (idx >= 0) recipes[idx] = recipe;
+    showToast('Receta actualizada ✓');
+  } else {
+    recipes.unshift(recipe);
+    showToast('¡Receta guardada! 🎉');
+  }
 
   persist();
   rebuildChips();
   closeAll();
-  renderBento();
-  showToast('¡Receta guardada! 🎉');
+  renderCards();
 }
 
-/* ──────────────────────────────────────────────────────────
-   SHEET HELPERS
-────────────────────────────────────────────────────────── */
+/* ── SHEET HELPERS ──────────────────────────────────────── */
 function openSheet(id) {
   document.getElementById('overlay').classList.add('open');
   document.getElementById(id).classList.add('open');
@@ -489,18 +515,16 @@ function closeAll() {
   document.body.style.overflow = '';
 }
 
-/* ──────────────────────────────────────────────────────────
-   SWIPE TO CLOSE
-────────────────────────────────────────────────────────── */
+/* ── SWIPE TO CLOSE ─────────────────────────────────────── */
 let touchY0 = 0;
 document.querySelectorAll('.sheet').forEach(s => {
   s.addEventListener('touchstart', e => { touchY0 = e.touches[0].clientY; }, { passive: true });
-  s.addEventListener('touchend',   e => { if (e.changedTouches[0].clientY - touchY0 > 80) closeAll(); }, { passive: true });
+  s.addEventListener('touchend',   e => {
+    if (e.changedTouches[0].clientY - touchY0 > 80) closeAll();
+  }, { passive: true });
 });
 
-/* ──────────────────────────────────────────────────────────
-   TOAST
-────────────────────────────────────────────────────────── */
+/* ── TOAST ──────────────────────────────────────────────── */
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -508,9 +532,7 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2700);
 }
 
-/* ──────────────────────────────────────────────────────────
-   INIT
-────────────────────────────────────────────────────────── */
+/* ── INIT ───────────────────────────────────────────────── */
 boot();
 </script>
 </body>
