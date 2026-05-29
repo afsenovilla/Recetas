@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#f5efe6" />
+<meta name="theme-color" content="#faf6f0" />
 <title>Mi Recetario</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥘</text></svg>" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -13,7 +14,7 @@
 <header class="site-header">
   <div class="logo">
     <span class="logo-main">Mi Recetario</span>
-    <span class="logo-sub">cocina con amor</span>
+    <span class="logo-sub">— lo que sé hacer bien</span>
   </div>
   <div class="header-right">
     <button class="btn-circle theme-toggle" onclick="toggleTheme()" aria-label="Cambiar tema" id="theme-btn">🌙</button>
@@ -56,9 +57,10 @@
   </div>
   <div class="form-body">
     <input type="hidden" id="f-id" value="" />
+
     <div class="f-group">
       <label class="f-label">Nombre *</label>
-      <input class="f-input" id="f-name" placeholder="Ej: Tarta de manzana" />
+      <input class="f-input" id="f-name" placeholder="Ej: Pan de centeno" />
     </div>
     <div class="f-group">
       <label class="f-label">Descripción</label>
@@ -67,11 +69,11 @@
     <div class="f-row">
       <div class="f-group">
         <label class="f-label">Emoji</label>
-        <input class="f-input" id="f-emoji" placeholder="🍰" style="font-size:1.4rem;text-align:center" maxlength="2" />
+        <input class="f-input" id="f-emoji" placeholder="🍞" style="font-size:1.4rem;text-align:center" maxlength="2" />
       </div>
       <div class="f-group">
         <label class="f-label">Categoría</label>
-        <input class="f-input" id="f-cat" placeholder="Repostería" />
+        <input class="f-input" id="f-cat" placeholder="Panadería" />
       </div>
     </div>
     <div class="f-row">
@@ -108,9 +110,24 @@
         <input type="color" class="f-input" id="f-color" value="#f5e0c0" style="height:42px;padding:4px 8px;cursor:pointer" />
       </div>
     </div>
+
+    <div class="f-group">
+      <label class="f-label">Tipo de receta</label>
+      <div class="diet-btns" id="diet-btns">
+        <button class="diet-btn active" data-val="null" onclick="selectDiet(this)">Sin etiqueta</button>
+        <button class="diet-btn" data-val="vegetariano" onclick="selectDiet(this)">🌿 Vegetariana</button>
+        <button class="diet-btn" data-val="vegano" onclick="selectDiet(this)">🌱 Vegana</button>
+      </div>
+    </div>
+
+    <div class="f-group">
+      <label class="f-label">Alérgenos</label>
+      <div class="allergen-checks" id="allergen-checks"></div>
+    </div>
+
     <div class="f-group">
       <label class="f-label">Etiquetas (separadas por coma)</label>
-      <input class="f-input" id="f-tags" placeholder="fácil, repostería, merienda" />
+      <input class="f-input" id="f-tags" placeholder="pan, sin reposo, canela" />
     </div>
     <div class="f-group">
       <label class="f-label">Ingredientes</label>
@@ -135,7 +152,7 @@
   <div class="confirm-box">
     <div class="confirm-icon" id="confirm-icon">✏️</div>
     <div class="confirm-title" id="confirm-title">¿Editar receta?</div>
-    <div class="confirm-msg" id="confirm-msg">Vas a editar esta receta. Los cambios reemplazarán la versión actual.</div>
+    <div class="confirm-msg" id="confirm-msg">Vas a editar esta receta.</div>
     <div class="confirm-btns">
       <button class="confirm-cancel" onclick="closeConfirm()">Cancelar</button>
       <button class="confirm-ok" id="confirm-ok-btn" onclick="confirmAction()">Continuar</button>
@@ -148,18 +165,41 @@
 
 <!-- ══ SCRIPTS ══════════════════════════════════════════════ -->
 <script>
+/* ── ALLERGEN CONFIG ───────────────────────────────────── */
+const ALLERGENS = [
+  { id: 'gluten',       label: 'Gluten',       icon: '🌾' },
+  { id: 'lacteos',      label: 'Lácteos',      icon: '🥛' },
+  { id: 'huevos',       label: 'Huevos',       icon: '🥚' },
+  { id: 'frutos_secos', label: 'Frutos secos', icon: '🥜' },
+  { id: 'soja',         label: 'Soja',         icon: '🫘' },
+  { id: 'pescado',      label: 'Pescado',      icon: '🐟' },
+  { id: 'marisco',      label: 'Marisco',      icon: '🦐' },
+  { id: 'sesamo',       label: 'Sésamo',       icon: '🌱' },
+  { id: 'apio',         label: 'Apio',         icon: '🥬' },
+  { id: 'mostaza',      label: 'Mostaza',      icon: '🌿' },
+  { id: 'sulfitos',     label: 'Sulfitos',     icon: '🍇' },
+  { id: 'altramuces',   label: 'Altramuces',   icon: '🌼' },
+  { id: 'moluscos',     label: 'Moluscos',     icon: '🦑' },
+  { id: 'cacahuetes',   label: 'Cacahuetes',   icon: '🥜' },
+];
+
+function allergenLabel(id) {
+  const a = ALLERGENS.find(x => x.id === id);
+  return a ? `${a.icon} ${a.label}` : id;
+}
+
 /* ── STATE ─────────────────────────────────────────────── */
-let recipes   = [];
+let recipes = [];
 let activeTag = 'todos';
-let checked   = {};   // { recipeId: { ingIdx: bool } }
-let done      = {};   // { recipeId: { stepIdx: bool } }
-let pendingAction = null; // function to call after confirm
+let checked = {};
+let done = {};
+let pendingAction = null;
 
 /* ── THEME ─────────────────────────────────────────────── */
 function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
   document.getElementById('theme-btn').textContent = dark ? '☀️' : '🌙';
-  document.querySelector('meta[name="theme-color"]').content = dark ? '#1a1209' : '#f5efe6';
+  document.querySelector('meta[name="theme-color"]').content = dark ? '#160e07' : '#faf6f0';
 }
 function toggleTheme() {
   const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
@@ -169,13 +209,11 @@ function toggleTheme() {
 
 /* ── BOOT ───────────────────────────────────────────────── */
 async function boot() {
-  // Theme
   const saved = localStorage.getItem('theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(saved ? saved === 'dark' : prefersDark);
 
-  // Recipes
-  const stored = localStorage.getItem('recetario_v3');
+  const stored = localStorage.getItem('recetario_v4');
   if (stored) {
     recipes = JSON.parse(stored);
   } else {
@@ -185,13 +223,12 @@ async function boot() {
       persist();
     } catch(e) { recipes = []; }
   }
-
   rebuildChips();
   renderCards();
 }
 
 function persist() {
-  localStorage.setItem('recetario_v3', JSON.stringify(recipes));
+  localStorage.setItem('recetario_v4', JSON.stringify(recipes));
 }
 
 /* ── CHIPS ──────────────────────────────────────────────── */
@@ -209,14 +246,12 @@ function rebuildChips() {
     container.appendChild(btn);
   });
 }
-
 function setChip(el) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeTag = el.dataset.tag;
   renderCards();
 }
-
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 /* ── FILTER ─────────────────────────────────────────────── */
@@ -227,9 +262,18 @@ function filterRecipes() {
   if (q) list = list.filter(r =>
     r.name.toLowerCase().includes(q) ||
     (r.description||'').toLowerCase().includes(q) ||
-    (r.tags||[]).some(t => t.includes(q))
+    (r.tags||[]).some(t => t.includes(q)) ||
+    (r.category||'').toLowerCase().includes(q)
   );
   return list;
+}
+
+/* ── DIET BADGE HTML ────────────────────────────────────── */
+function dietBadgeHTML(diet) {
+  if (!diet) return '';
+  const cls = diet === 'vegano' ? 'dbadge-vegan' : 'dbadge-vegetarian';
+  const label = diet === 'vegano' ? '🌱 Vegano' : '🌿 Vegetariano';
+  return `<span class="dbadge ${cls}">${label}</span>`;
 }
 
 /* ── RENDER CARDS ───────────────────────────────────────── */
@@ -247,43 +291,48 @@ function renderCards() {
   }
 
   page.innerHTML = '';
+
   list.forEach((r, i) => {
-    const delay = i * 60;
+    const delay = i * 55;
+    const dietBadge = dietBadgeHTML(r.diet);
+    const badgesBlock = dietBadge ? `<div class="card-badges">${dietBadge}</div>` : '';
+
     if (i === 0) {
-      // Hero card
       page.innerHTML += `
-        <div class="recipe-card card-hero" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
-          <div class="card-color-band" style="background:${r.color}"></div>
-          <div class="card-body">
-            <div class="card-cat">${r.category||''}</div>
-            <h2 class="card-title">${r.name}</h2>
-            ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
-            <div class="card-meta">
-              <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
-              <span class="meta-item"><span class="meta-icon">🔥</span>${r.cookTime}</span>
-              <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
-              <span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty||'—'}</span>
-            </div>
-            <div class="card-tags">
-              ${(r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('')}
-            </div>
+      <div class="recipe-card card-hero" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
+        <div class="card-color-band" style="background:${r.color}"></div>
+        <div class="card-body">
+          <div class="card-cat">${r.category||''}</div>
+          ${badgesBlock}
+          <h2 class="card-title">${r.name}</h2>
+          ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
+          <div class="card-meta">
+            <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
+            <span class="meta-item"><span class="meta-icon">🔥</span>${r.cookTime}</span>
+            <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
+            <span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty||'—'}</span>
           </div>
-        </div>`;
+          <div class="card-tags">
+            ${(r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>`;
     } else {
-      // Standard card
       page.innerHTML += `
-        <div class="recipe-card card-standard" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
-          <div class="card-emoji-col" style="background:${r.color}20">${r.emoji||'🍽️'}</div>
-          <div class="card-body">
-            <div class="card-cat">${r.category||''}</div>
-            <div class="card-title">${r.name}</div>
-            ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
-            <div class="card-meta">
-              <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
-              <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
-            </div>
+      <div class="recipe-card card-standard" onclick="openDetail(${r.id})" style="animation-delay:${delay}ms">
+        <div class="card-emoji-col" style="background:${r.color}20">${r.emoji||'🍽️'}</div>
+        <div class="card-body">
+          <div class="card-cat">${r.category||''}</div>
+          ${badgesBlock}
+          <div class="card-title">${r.name}</div>
+          ${r.description ? `<p class="card-desc">${r.description}</p>` : ''}
+          <div class="card-meta">
+            <span class="meta-item"><span class="meta-icon">⏱</span>${r.prepTime}</span>
+            <span class="meta-item"><span class="meta-icon">🍽</span>${r.servings}</span>
+            ${r.difficulty ? `<span class="meta-item"><span class="meta-icon">📊</span>${r.difficulty}</span>` : ''}
           </div>
-        </div>`;
+        </div>
+      </div>`;
     }
   });
 }
@@ -293,7 +342,7 @@ function openDetail(id) {
   const r = recipes.find(x => x.id === id);
   if (!r) return;
   if (!checked[id]) checked[id] = {};
-  if (!done[id])    done[id]    = {};
+  if (!done[id]) done[id] = {};
 
   const ings = (r.ingredients||[]).map((ing, i) => `
     <li class="ing-item ${checked[id][i]?'checked':''}" onclick="toggleIng(${id},${i},this)">
@@ -308,11 +357,34 @@ function openDetail(id) {
       <p class="step-text">${s}</p>
     </li>`).join('');
 
+  // Allergens section
+  const allergens = r.allergens || [];
+  let allergenHTML = '';
+  if (allergens.length > 0) {
+    allergenHTML = `
+    <div class="allergen-section">
+      <div class="allergen-title">⚠️ Contiene alérgenos</div>
+      <div class="allergen-list">
+        ${allergens.map(a => `<span class="allergen-tag">${allergenLabel(a)}</span>`).join('')}
+      </div>
+    </div>`;
+  } else {
+    allergenHTML = `
+    <div class="allergen-section">
+      <div class="allergen-title">Alérgenos</div>
+      <span class="allergen-free">✓ Sin alérgenos declarados</span>
+    </div>`;
+  }
+
+  const dietBadge = dietBadgeHTML(r.diet);
+  const badgesBlock = dietBadge ? `<div class="detail-badges">${dietBadge}</div>` : '';
+
   document.getElementById('detail-inner').innerHTML = `
     <div class="detail-color-band" style="background:${r.color}"></div>
     <div class="detail-emoji">${r.emoji||'🍽️'}</div>
     <div class="detail-body">
       <div class="detail-cat">${r.category||''}</div>
+      ${badgesBlock}
       <h1 class="detail-title">${r.name}</h1>
       ${r.description ? `<p class="detail-desc">${r.description}</p>` : ''}
       <div class="detail-stats">
@@ -321,9 +393,10 @@ function openDetail(id) {
         <div class="dstat"><span class="dstat-icon">🍽</span><span class="dstat-val">${r.servings}</span><span class="dstat-lbl">Raciones</span></div>
         <div class="dstat"><span class="dstat-icon">📊</span><span class="dstat-val">${r.difficulty||'—'}</span><span class="dstat-lbl">Nivel</span></div>
       </div>
-      ${ings  ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ings}</ul>` : ''}
+      ${allergenHTML}
+      ${ings ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ings}</ul>` : ''}
       ${steps ? `<h3 class="sec-title">Elaboración</h3><ol class="steps-list">${steps}</ol>` : ''}
-      ${r.tips? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
+      ${r.tips ? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
       <div class="detail-actions">
         <button class="btn-edit" onclick="askEdit(${id})">✏️ Editar receta</button>
         <button class="btn-delete" onclick="askDelete(${id})">🗑</button>
@@ -344,85 +417,98 @@ function toggleStep(rid, idx, el) {
 
 /* ── CONFIRM DIALOG ─────────────────────────────────────── */
 function showConfirm({icon, title, msg, okLabel='Continuar', danger=false, onOk}) {
-  document.getElementById('confirm-icon').textContent   = icon;
-  document.getElementById('confirm-title').textContent  = title;
-  document.getElementById('confirm-msg').textContent    = msg;
+  document.getElementById('confirm-icon').textContent = icon;
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
   const okBtn = document.getElementById('confirm-ok-btn');
   okBtn.textContent = okLabel;
-  okBtn.className   = 'confirm-ok' + (danger ? ' danger' : '');
+  okBtn.className = 'confirm-ok' + (danger ? ' danger' : '');
   pendingAction = onOk;
   document.getElementById('confirm-backdrop').classList.add('open');
 }
-
 function closeConfirm() {
   document.getElementById('confirm-backdrop').classList.remove('open');
   pendingAction = null;
 }
-
 function confirmAction() {
   closeConfirm();
   if (pendingAction) pendingAction();
 }
 
-/* ── EDIT RECIPE ────────────────────────────────────────── */
+/* ── EDIT / DELETE ──────────────────────────────────────── */
 function askEdit(id) {
   const r = recipes.find(x => x.id === id);
   showConfirm({
-    icon: '✏️',
-    title: '¿Editar receta?',
+    icon: '✏️', title: '¿Editar receta?',
     msg: `Vas a editar "${r.name}". Los cambios reemplazarán la versión actual.`,
-    okLabel: 'Editar',
-    danger: false,
-    onOk: () => {
-      closeAll();
-      setTimeout(() => openForm(id), 100);
-    }
+    okLabel: 'Editar', danger: false,
+    onOk: () => { closeAll(); setTimeout(() => openForm(id), 100); }
   });
 }
-
-/* ── DELETE RECIPE ──────────────────────────────────────── */
 function askDelete(id) {
   const r = recipes.find(x => x.id === id);
   showConfirm({
-    icon: '🗑️',
-    title: '¿Eliminar receta?',
-    msg: `Vas a eliminar "${r.name}" de forma permanente. Esta acción no se puede deshacer.`,
-    okLabel: 'Eliminar',
-    danger: true,
+    icon: '🗑️', title: '¿Eliminar receta?',
+    msg: `"${r.name}" se eliminará de forma permanente.`,
+    okLabel: 'Eliminar', danger: true,
     onOk: () => {
       recipes = recipes.filter(x => x.id !== id);
-      persist();
-      rebuildChips();
-      closeAll();
-      renderCards();
+      persist(); rebuildChips(); closeAll(); renderCards();
       showToast('Receta eliminada');
     }
   });
 }
 
 /* ── FORM ───────────────────────────────────────────────── */
+function buildAllergenChecks(selected=[]) {
+  const container = document.getElementById('allergen-checks');
+  container.innerHTML = '';
+  ALLERGENS.forEach(a => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'allergen-check-btn' + (selected.includes(a.id) ? ' selected' : '');
+    btn.dataset.id = a.id;
+    btn.textContent = `${a.icon} ${a.label}`;
+    btn.onclick = () => btn.classList.toggle('selected');
+    container.appendChild(btn);
+  });
+}
+
+function selectDiet(el) {
+  document.querySelectorAll('.diet-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
 function openForm(editId) {
   const r = editId ? recipes.find(x => x.id === editId) : null;
   document.getElementById('form-title').textContent = r ? 'Editar receta' : 'Nueva receta';
   document.getElementById('f-id').value = r ? r.id : '';
 
   const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val||''; };
-  set('f-name',     r ? r.name        : '');
-  set('f-desc',     r ? r.description : '');
-  set('f-emoji',    r ? r.emoji       : '');
-  set('f-cat',      r ? r.category    : '');
-  set('f-prep',     r ? r.prepTime    : '');
-  set('f-cook',     r ? r.cookTime    : '');
-  set('f-total',    r ? r.totalTime   : '');
-  set('f-servings', r ? r.servings    : '');
-  set('f-tips',     r ? r.tips        : '');
-  document.getElementById('f-diff').value  = r ? (r.difficulty||'Fácil')     : 'Fácil';
-  document.getElementById('f-color').value = r ? (r.color||'#f5e0c0')         : '#f5e0c0';
-  document.getElementById('f-tags').value  = r ? (r.tags||[]).join(', ')       : '';
+  set('f-name', r?.name);
+  set('f-desc', r?.description);
+  set('f-emoji', r?.emoji);
+  set('f-cat', r?.category);
+  set('f-prep', r?.prepTime);
+  set('f-cook', r?.cookTime);
+  set('f-total', r?.totalTime);
+  set('f-servings', r?.servings);
+  set('f-tips', r?.tips);
+  set('f-tags', r ? (r.tags||[]).join(', ') : '');
+  document.getElementById('f-diff').value = r?.difficulty || 'Fácil';
+  document.getElementById('f-color').value = r?.color || '#f5e0c0';
 
-  document.getElementById('ing-list').innerHTML  = '';
+  // Diet buttons
+  const dietVal = r?.diet || 'null';
+  document.querySelectorAll('.diet-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === String(dietVal));
+  });
+
+  // Allergen checkboxes
+  buildAllergenChecks(r?.allergens || []);
+
+  document.getElementById('ing-list').innerHTML = '';
   document.getElementById('step-list').innerHTML = '';
-
   if (r) {
     (r.ingredients||[]).forEach(ing => addIng(ing.amount, ing.name));
     (r.steps||[]).forEach(s => addStep(s));
@@ -430,7 +516,6 @@ function openForm(editId) {
     addIng(); addIng(); addIng();
     addStep(); addStep();
   }
-
   openSheet('form-sheet');
 }
 
@@ -438,8 +523,8 @@ function addIng(amount='', name='') {
   const el = document.createElement('div');
   el.className = 'ing-dyn';
   el.innerHTML = `<input class="f-input" placeholder="100 g" value="${escAttr(amount)}" />
-    <input class="f-input" placeholder="ingrediente" value="${escAttr(name)}" />
-    <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
+  <input class="f-input" placeholder="ingrediente" value="${escAttr(name)}" />
+  <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
   document.getElementById('ing-list').appendChild(el);
 }
 
@@ -448,7 +533,7 @@ function addStep(val='') {
   const el = document.createElement('div');
   el.className = 'dyn-item';
   el.innerHTML = `<input class="f-input" placeholder="Paso ${n}…" value="${escAttr(val)}" style="flex:1" />
-    <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
+  <button class="btn-rm" onclick="this.parentElement.remove()" type="button">✕</button>`;
   document.getElementById('step-list').appendChild(el);
 }
 
@@ -468,22 +553,29 @@ function saveRecipe() {
 
   const tags = document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
 
-  const editId = document.getElementById('f-id').value;
+  // Get selected diet
+  const activeDietBtn = document.querySelector('.diet-btn.active');
+  const dietVal = activeDietBtn ? activeDietBtn.dataset.val : 'null';
+  const diet = dietVal === 'null' ? null : dietVal;
 
+  // Get selected allergens
+  const allergens = [...document.querySelectorAll('.allergen-check-btn.selected')].map(b => b.dataset.id);
+
+  const editId = document.getElementById('f-id').value;
   const recipe = {
-    id:          editId ? parseInt(editId) : Date.now(),
+    id: editId ? parseInt(editId) : Date.now(),
     name,
     description: document.getElementById('f-desc').value.trim(),
-    emoji:       document.getElementById('f-emoji').value.trim() || '🍽️',
-    category:    document.getElementById('f-cat').value.trim()   || 'Sin categoría',
-    prepTime:    document.getElementById('f-prep').value.trim()  || '—',
-    cookTime:    document.getElementById('f-cook').value.trim()  || '—',
-    totalTime:   document.getElementById('f-total').value.trim() || '—',
-    servings:    document.getElementById('f-servings').value.trim() || '—',
-    difficulty:  document.getElementById('f-diff').value,
-    color:       document.getElementById('f-color').value,
-    tags, ingredients, steps,
-    tips:        document.getElementById('f-tips').value.trim(),
+    emoji: document.getElementById('f-emoji').value.trim() || '🍽️',
+    category: document.getElementById('f-cat').value.trim() || 'Sin categoría',
+    prepTime: document.getElementById('f-prep').value.trim() || '—',
+    cookTime: document.getElementById('f-cook').value.trim() || '—',
+    totalTime: document.getElementById('f-total').value.trim() || '—',
+    servings: document.getElementById('f-servings').value.trim() || '—',
+    difficulty: document.getElementById('f-diff').value,
+    color: document.getElementById('f-color').value,
+    diet, allergens, tags, ingredients, steps,
+    tips: document.getElementById('f-tips').value.trim(),
   };
 
   if (editId) {
@@ -494,11 +586,7 @@ function saveRecipe() {
     recipes.unshift(recipe);
     showToast('¡Receta guardada! 🎉');
   }
-
-  persist();
-  rebuildChips();
-  closeAll();
-  renderCards();
+  persist(); rebuildChips(); closeAll(); renderCards();
 }
 
 /* ── SHEET HELPERS ──────────────────────────────────────── */
@@ -507,7 +595,6 @@ function openSheet(id) {
   document.getElementById(id).classList.add('open');
   document.body.style.overflow = 'hidden';
 }
-
 function closeAll() {
   document.getElementById('overlay').classList.remove('open');
   document.getElementById('detail-sheet').classList.remove('open');
@@ -519,7 +606,7 @@ function closeAll() {
 let touchY0 = 0;
 document.querySelectorAll('.sheet').forEach(s => {
   s.addEventListener('touchstart', e => { touchY0 = e.touches[0].clientY; }, { passive: true });
-  s.addEventListener('touchend',   e => {
+  s.addEventListener('touchend', e => {
     if (e.changedTouches[0].clientY - touchY0 > 80) closeAll();
   }, { passive: true });
 });
@@ -532,7 +619,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2700);
 }
 
-/* ── INIT ───────────────────────────────────────────────── */
 boot();
 </script>
 </body>
