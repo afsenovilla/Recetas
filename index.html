@@ -454,9 +454,14 @@ function openDetail(id) {
   openSheet('detail-sheet');
 }
 
-/* ── EDIT directly (no confirm dialog needed) ───────────── */
+/* ── EDIT with password ─────────────────────────────────── */
 function editRecipe(id) {
-  // Close detail sheet first, then open form after animation
+  const pwd = prompt('Introduce la contraseña para editar:');
+  if (pwd === null) return; // cancelado
+  if (pwd !== '1234') {
+    showToast('Contraseña incorrecta');
+    return;
+  }
   closeDetailOnly();
   setTimeout(() => openForm(id), 320);
 }
