@@ -274,28 +274,93 @@ function toggleTheme() {
 }
 
 /* ── BOOT ───────────────────────────────────────────────── */
+/* ── PERSISTENCIA ───────────────────────────────────────────
+   Dos capas separadas:
+   - factoryRecipes: las recetas del repo (recipes.json). Fuente de
+     verdad, se recarga siempre al arrancar.
+   - userOverlay: SOLO lo que hace el usuario, en localStorage:
+       { added: [...], edited: {id: receta}, hidden: [ids] }
+   recipes = merge de ambas, y es lo que usa toda la interfaz.
+─────────────────────────────────────────────────────────────── */
+let factoryRecipes = [];
+let userOverlay = { added: [], edited: {}, hidden: [] };
+const OVERLAY_KEY = 'recetario_user';
+
+function loadOverlay() {
+  try {
+    const raw = localStorage.getItem(OVERLAY_KEY);
+    if (raw) {
+      const o = JSON.parse(raw);
+      userOverlay = {
+        added: Array.isArray(o.added) ? o.added : [],
+        edited: (o.edited && typeof o.edited === 'object') ? o.edited : {},
+        hidden: Array.isArray(o.hidden) ? o.hidden : [],
+      };
+    }
+  } catch(e) { userOverlay = { added: [], edited: {}, hidden: [] }; }
+}
+
+function saveOverlay() {
+  localStorage.setItem(OVERLAY_KEY, JSON.stringify(userOverlay));
+}
+
+// Migración: si existe la clave antigua (todo mezclado), recuperamos
+// de ella las recetas que el usuario hubiera añadido a mano para no
+// perderlas, y la borramos.
+function migrateOldStore(factoryIds) {
+  const old = localStorage.getItem('recetario_v4');
+  if (!old) return;
+  try {
+    const list = JSON.parse(old);
+    list.forEach(r => {
+      // Si su id no está en el JSON de fábrica, era una receta del usuario
+      if (!factoryIds.has(r.id) && !userOverlay.added.some(a => a.id === r.id)) {
+        userOverlay.added.push(r);
+      }
+    });
+    saveOverlay();
+  } catch(e) {}
+  localStorage.removeItem('recetario_v4');
+}
+
+// Reconstruye la lista fusionada a partir de fábrica + overlay
+function rebuildRecipes() {
+  const hidden = new Set(userOverlay.hidden);
+  // Recetas de fábrica: quitamos ocultas y aplicamos ediciones
+  const merged = factoryRecipes
+    .filter(r => !hidden.has(r.id))
+    .map(r => userOverlay.edited[r.id] ? userOverlay.edited[r.id] : r);
+  // Añadidos del usuario al principio (los más nuevos arriba)
+  recipes = [...userOverlay.added].reverse().concat(merged);
+}
+
 async function boot() {
   const saved = localStorage.getItem('theme');
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   applyTheme(saved ? saved === 'dark' : prefersDark);
 
-  const stored = localStorage.getItem('recetario_v4');
-  if (stored) {
-    recipes = JSON.parse(stored);
-  } else {
-    try {
-      const res = await fetch('recipes.json');
-      recipes = await res.json();
-      persist();
-    } catch(e) { recipes = []; }
+  loadOverlay();
+
+  // El JSON de fábrica se lee SIEMPRE
+  try {
+    const res = await fetch('recipes.json', { cache: 'no-store' });
+    factoryRecipes = await res.json();
+  } catch(e) {
+    factoryRecipes = [];
   }
+
+  // Migrar datos del esquema antiguo si los hubiera
+  migrateOldStore(new Set(factoryRecipes.map(r => r.id)));
+
+  rebuildRecipes();
   rebuildChips();
   buildDietFilters();
   renderCards();
 }
 
+// persist() ahora solo guarda el overlay del usuario
 function persist() {
-  localStorage.setItem('recetario_v4', JSON.stringify(recipes));
+  saveOverlay();
 }
 
 /* ── CHIPS ──────────────────────────────────────────────── */
@@ -781,14 +846,31 @@ function editRecipe(id) {
   setTimeout(() => openForm(id), 320);
 }
 
+function isFactory(id) {
+  return factoryRecipes.some(r => r.id === id);
+}
+
 function askDelete(id) {
   const pwd = prompt('Introduce la contraseña para eliminar:');
   if (pwd === null) return;
   if (pwd !== '1234') { showToast('Contraseña incorrecta'); return; }
   const r = recipes.find(x => x.id === id);
   if (!confirm(`¿Eliminar "${r.name}" de forma permanente?`)) return;
-  recipes = recipes.filter(x => x.id !== id);
-  persist(); rebuildChips(); closeAll(); renderCards();
+
+  if (isFactory(id)) {
+    // Receta de fábrica: la ocultamos y limpiamos cualquier edición previa
+    if (!userOverlay.hidden.includes(id)) userOverlay.hidden.push(id);
+    delete userOverlay.edited[id];
+  } else {
+    // Receta del usuario: la quitamos de added
+    userOverlay.added = userOverlay.added.filter(x => x.id !== id);
+  }
+
+  persist();
+  rebuildRecipes();
+  rebuildChips();
+  closeAll();
+  renderCards();
   showToast('Receta eliminada');
 }
 
@@ -1146,19 +1228,23 @@ function saveRecipe() {
   };
 
   if (editId) {
-    const idx = recipes.findIndex(x => x.id === editId);
-    if (idx >= 0) {
-      recipes[idx] = recipe;
+    if (isFactory(editId)) {
+      // Edición de receta de fábrica: se guarda como override
+      userOverlay.edited[editId] = recipe;
     } else {
-      recipes.unshift(recipe);
+      // Edición de receta propia: actualizar en added (o añadir si no estaba)
+      const idx = userOverlay.added.findIndex(x => x.id === editId);
+      if (idx >= 0) userOverlay.added[idx] = recipe;
+      else userOverlay.added.push(recipe);
     }
     showToast('Receta actualizada ✓');
   } else {
-    recipes.unshift(recipe);
+    userOverlay.added.push(recipe);
     showToast('¡Receta guardada! 🎉');
   }
 
   persist();
+  rebuildRecipes();
   rebuildChips();
   closeAll();
   renderCards();
