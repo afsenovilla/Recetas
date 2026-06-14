@@ -27,9 +27,10 @@
 <div class="filter-bar">
   <div class="search-wrap">
     <span class="ico-search">🔍</span>
-    <input type="search" id="search" placeholder="Buscar recetas…" oninput="renderCards()" autocomplete="off" />
+    <input type="search" id="search" placeholder="Buscar recetas o ingredientes…" oninput="renderCards()" autocomplete="off" />
   </div>
   <div class="chips-row" id="chips"></div>
+  <div class="filter-row" id="diet-filter-row"></div>
 </div>
 
 <!-- ══ MAIN CANVAS ═════════════════════════════════════════ -->
@@ -49,6 +50,23 @@
   <div id="detail-inner"></div>
 </div>
 
+<!-- ══ COOK MODE ═══════════════════════════════════════════ -->
+<div class="cook-mode" id="cook-mode">
+  <div class="cook-header">
+    <span class="cook-recipe-name" id="cook-recipe-name"></span>
+    <button class="cook-close" id="cook-close" type="button" aria-label="Salir">✕</button>
+  </div>
+  <div class="cook-progress"><div class="cook-progress-bar" id="cook-progress-bar"></div></div>
+  <div class="cook-body">
+    <div class="cook-step-counter" id="cook-step-counter"></div>
+    <p class="cook-step-text" id="cook-step-text"></p>
+  </div>
+  <div class="cook-nav">
+    <button class="cook-nav-btn" id="cook-prev" type="button">← Anterior</button>
+    <button class="cook-nav-btn cook-nav-next" id="cook-next" type="button">Siguiente →</button>
+  </div>
+</div>
+
 <!-- ══ FORM SHEET ══════════════════════════════════════════ -->
 <div class="sheet" id="form-sheet">
   <div class="sheet-handle"></div>
@@ -58,6 +76,16 @@
   </div>
   <div class="form-body">
     <input type="hidden" id="f-id" value="" />
+
+    <!-- Importar desde enlace -->
+    <div class="import-box" id="import-box">
+      <label class="f-label">Importar desde un enlace</label>
+      <div class="import-row">
+        <input class="f-input" id="f-import-url" type="url" inputmode="url" placeholder="Pega la URL de una receta…" />
+        <button class="btn-import" id="btn-import" type="button" onclick="importFromUrl()">Traer</button>
+      </div>
+      <p class="import-hint">Rellenará los campos automáticamente. Podrás revisarlos antes de guardar.</p>
+    </div>
 
     <div class="f-group">
       <label class="f-label">Nombre *</label>
@@ -111,7 +139,6 @@
         <input type="color" class="f-input" id="f-color" value="#f5e0c0" style="height:42px;padding:4px 8px;cursor:pointer" />
       </div>
     </div>
-
     <div class="f-group">
       <label class="f-label">Tipo de receta</label>
       <div class="diet-btns" id="diet-btns">
@@ -120,12 +147,14 @@
         <button class="diet-btn" data-val="vegano" onclick="selectDiet(this)">🌱 Vegana</button>
       </div>
     </div>
-
     <div class="f-group">
       <label class="f-label">Alérgenos</label>
       <div class="allergen-checks" id="allergen-checks"></div>
     </div>
-
+    <div class="f-group">
+      <label class="f-label">Enlace a la receta original (opcional)</label>
+      <input class="f-input" id="f-source" type="url" inputmode="url" placeholder="https://…" />
+    </div>
     <div class="f-group">
       <label class="f-label">Etiquetas (separadas por coma)</label>
       <input class="f-input" id="f-tags" placeholder="pan, sin reposo, canela" />
@@ -155,20 +184,20 @@
 <script>
 /* ── ALLERGEN CONFIG ───────────────────────────────────── */
 const ALLERGENS = [
-  { id: 'gluten',       label: 'Gluten',       icon: '🌾' },
-  { id: 'lacteos',      label: 'Lácteos',      icon: '🥛' },
-  { id: 'huevos',       label: 'Huevos',       icon: '🥚' },
+  { id: 'gluten', label: 'Gluten', icon: '🌾' },
+  { id: 'lacteos', label: 'Lácteos', icon: '🥛' },
+  { id: 'huevos', label: 'Huevos', icon: '🥚' },
   { id: 'frutos_secos', label: 'Frutos secos', icon: '🥜' },
-  { id: 'soja',         label: 'Soja',         icon: '🫘' },
-  { id: 'pescado',      label: 'Pescado',      icon: '🐟' },
-  { id: 'marisco',      label: 'Marisco',      icon: '🦐' },
-  { id: 'sesamo',       label: 'Sésamo',       icon: '🌾' },
-  { id: 'apio',         label: 'Apio',         icon: '🥬' },
-  { id: 'mostaza',      label: 'Mostaza',      icon: '🌿' },
-  { id: 'sulfitos',     label: 'Sulfitos',     icon: '🍇' },
-  { id: 'altramuces',   label: 'Altramuces',   icon: '🌼' },
-  { id: 'moluscos',     label: 'Moluscos',     icon: '🦑' },
-  { id: 'cacahuetes',   label: 'Cacahuetes',   icon: '🥜' },
+  { id: 'soja', label: 'Soja', icon: '🫘' },
+  { id: 'pescado', label: 'Pescado', icon: '🐟' },
+  { id: 'marisco', label: 'Marisco', icon: '🦐' },
+  { id: 'sesamo', label: 'Sésamo', icon: '🌾' },
+  { id: 'apio', label: 'Apio', icon: '🥬' },
+  { id: 'mostaza', label: 'Mostaza', icon: '🌿' },
+  { id: 'sulfitos', label: 'Sulfitos', icon: '🍇' },
+  { id: 'altramuces', label: 'Altramuces', icon: '🌼' },
+  { id: 'moluscos', label: 'Moluscos', icon: '🦑' },
+  { id: 'cacahuetes', label: 'Cacahuetes', icon: '🥜' },
 ];
 
 function allergenLabel(id) {
@@ -176,15 +205,25 @@ function allergenLabel(id) {
   return a ? `${a.icon} ${a.label}` : id;
 }
 
+/* ── HELPERS ───────────────────────────────────────────── */
+// Extrae un dominio legible de una URL para mostrar en el botón
+function prettyDomain(url) {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '');
+    return h;
+  } catch(e) { return 'la fuente original'; }
+}
+
 /* ── STATE ─────────────────────────────────────────────── */
 let recipes = [];
 let activeTag = 'todos';
+let activeDietFilter = null;      // null | 'vegetariano' | 'vegano'
+let excludedAllergens = new Set(); // alérgenos a excluir
 let checked = {};
 let done = {};
 
 /* ── WAKE LOCK ──────────────────────────────────────────── */
 let wakeLock = null;
-
 async function toggleWakeLock() {
   const btn = document.getElementById('wake-btn');
   if (wakeLock) {
@@ -213,7 +252,6 @@ async function toggleWakeLock() {
     }
   }
 }
-
 // Re-acquire wake lock after visibility change (e.g. tab switch)
 document.addEventListener('visibilitychange', async () => {
   if (wakeLock !== null && document.visibilityState === 'visible') {
@@ -252,6 +290,7 @@ async function boot() {
     } catch(e) { recipes = []; }
   }
   rebuildChips();
+  buildDietFilters();
   renderCards();
 }
 
@@ -274,24 +313,92 @@ function rebuildChips() {
     container.appendChild(btn);
   });
 }
+
 function setChip(el) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   activeTag = el.dataset.tag;
   renderCards();
 }
+
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ── DIET / ALLERGEN FILTERS ────────────────────────────── */
+function buildDietFilters() {
+  const row = document.getElementById('diet-filter-row');
+  row.innerHTML = '';
+
+  // Botones de dieta
+  const diets = [
+    { val: 'vegetariano', label: '🌿 Vegetariano' },
+    { val: 'vegano', label: '🌱 Vegano' },
+  ];
+  diets.forEach(d => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-pill' + (activeDietFilter === d.val ? ' active' : '');
+    btn.textContent = d.label;
+    btn.onclick = () => {
+      activeDietFilter = (activeDietFilter === d.val) ? null : d.val;
+      buildDietFilters();
+      renderCards();
+    };
+    row.appendChild(btn);
+  });
+
+  // Separador visual si hay alérgenos
+  const usedAllergens = new Set();
+  recipes.forEach(r => (r.allergens||[]).forEach(a => usedAllergens.add(a)));
+
+  if (usedAllergens.size > 0) {
+    const sep = document.createElement('span');
+    sep.className = 'filter-sep';
+    sep.textContent = 'sin';
+    row.appendChild(sep);
+
+    // Solo alérgenos presentes en alguna receta, en el orden de ALLERGENS
+    ALLERGENS.filter(a => usedAllergens.has(a.id)).forEach(a => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-pill filter-pill-exclude' + (excludedAllergens.has(a.id) ? ' active' : '');
+      btn.textContent = `${a.icon} ${a.label}`;
+      btn.onclick = () => {
+        if (excludedAllergens.has(a.id)) excludedAllergens.delete(a.id);
+        else excludedAllergens.add(a.id);
+        buildDietFilters();
+        renderCards();
+      };
+      row.appendChild(btn);
+    });
+  }
+}
 
 /* ── FILTER ─────────────────────────────────────────────── */
 function filterRecipes() {
   const q = (document.getElementById('search').value || '').trim().toLowerCase();
   let list = recipes;
   if (activeTag !== 'todos') list = list.filter(r => (r.tags||[]).includes(activeTag));
+
+  // Filtro de dieta: vegano también cumple "vegetariano"
+  if (activeDietFilter === 'vegetariano') {
+    list = list.filter(r => r.diet === 'vegetariano' || r.diet === 'vegano');
+  } else if (activeDietFilter === 'vegano') {
+    list = list.filter(r => r.diet === 'vegano');
+  }
+
+  // Filtro de alérgenos: excluir recetas que contengan cualquiera de los marcados
+  if (excludedAllergens.size > 0) {
+    list = list.filter(r => {
+      const a = r.allergens || [];
+      for (const ex of excludedAllergens) if (a.includes(ex)) return false;
+      return true;
+    });
+  }
+
   if (q) list = list.filter(r =>
     r.name.toLowerCase().includes(q) ||
     (r.description||'').toLowerCase().includes(q) ||
     (r.tags||[]).some(t => t.includes(q)) ||
-    (r.category||'').toLowerCase().includes(q)
+    (r.category||'').toLowerCase().includes(q) ||
+    (r.ingredients||[]).some(ing => (ing.name||'').toLowerCase().includes(q))
   );
   return list;
 }
@@ -320,17 +427,14 @@ function renderCards() {
 
   // Build cards as DOM nodes to avoid innerHTML corruption
   page.innerHTML = '';
-
   list.forEach((r, i) => {
     const card = document.createElement('div');
     card.className = 'recipe-card card-standard';
     card.style.animationDelay = (i * 55) + 'ms';
     card.addEventListener('click', () => openDetail(r.id));
-
     const dietBadge = dietBadgeHTML(r.diet);
     const badgesBlock = dietBadge ? `<div class="card-badges">${dietBadge}</div>` : '';
     const tagsHTML = (r.tags||[]).map(t=>`<span class="ctag">${t}</span>`).join('');
-
     card.innerHTML = `
       <div class="card-emoji-col" style="background:${r.color}30">${r.emoji||'🍽️'}</div>
       <div class="card-body">
@@ -345,7 +449,6 @@ function renderCards() {
         </div>
         ${tagsHTML ? `<div class="card-tags">${tagsHTML}</div>` : ''}
       </div>`;
-
     page.appendChild(card);
   });
 }
@@ -361,22 +464,34 @@ function openDetail(id) {
   let allergenHTML = '';
   if (allergens.length > 0) {
     allergenHTML = `
-    <div class="allergen-section">
-      <div class="allergen-title">⚠️ Contiene alérgenos</div>
-      <div class="allergen-list">
-        ${allergens.map(a => `<span class="allergen-tag">${allergenLabel(a)}</span>`).join('')}
-      </div>
-    </div>`;
+      <div class="allergen-section">
+        <div class="allergen-title">⚠️ Contiene alérgenos</div>
+        <div class="allergen-list">
+          ${allergens.map(a => `<span class="allergen-tag">${allergenLabel(a)}</span>`).join('')}
+        </div>
+      </div>`;
   } else {
     allergenHTML = `
-    <div class="allergen-section">
-      <div class="allergen-title">Alérgenos</div>
-      <span class="allergen-free">✓ Sin alérgenos declarados</span>
-    </div>`;
+      <div class="allergen-section">
+        <div class="allergen-title">Alérgenos</div>
+        <span class="allergen-free">✓ Sin alérgenos declarados</span>
+      </div>`;
   }
 
   const dietBadge = dietBadgeHTML(r.diet);
   const badgesBlock = dietBadge ? `<div class="detail-badges">${dietBadge}</div>` : '';
+
+  // Bloque del enlace a la receta original
+  let sourceHTML = '';
+  if (r.sourceUrl && r.sourceUrl.trim()) {
+    sourceHTML = `
+      <h3 class="sec-title">Receta original</h3>
+      <a class="source-link" href="${r.sourceUrl}" target="_blank" rel="noopener noreferrer">
+        <span class="source-icon">🔗</span>
+        <span class="source-text">Ver en ${prettyDomain(r.sourceUrl)}</span>
+        <span class="source-arrow">↗</span>
+      </a>`;
+  }
 
   const inner = document.getElementById('detail-inner');
   inner.innerHTML = '';
@@ -422,8 +537,9 @@ function openDetail(id) {
     </div>
     ${allergenHTML}
     ${ingsHTML ? `<h3 class="sec-title">Ingredientes</h3><ul class="ing-list">${ingsHTML}</ul>` : ''}
-    ${stepsHTML ? `<h3 class="sec-title">Elaboración</h3><ol class="steps-list">${stepsHTML}</ol>` : ''}
+    ${stepsHTML ? `<div class="sec-title-row"><h3 class="sec-title">Elaboración</h3><button class="btn-cook" id="btn-cook-${id}" type="button">👨‍🍳 Modo cocina</button></div><ol class="steps-list">${stepsHTML}</ol>` : ''}
     ${r.tips ? `<h3 class="sec-title">Consejo</h3><div class="tips-box">${r.tips}</div>` : ''}
+    ${sourceHTML}
     <div class="detail-actions">
       <button class="btn-edit" id="btn-edit-${id}" type="button">✏️ Editar receta</button>
       <button class="btn-translate" id="btn-translate-${id}" type="button" title="Traducir al inglés">🇬🇧</button>
@@ -440,7 +556,6 @@ function openDetail(id) {
     checked[id][idx] = !checked[id][idx];
     li.classList.toggle('checked', checked[id][idx]);
   });
-
   body.querySelector('.steps-list') && body.querySelector('.steps-list').addEventListener('click', e => {
     const li = e.target.closest('.step-item');
     if (!li) return;
@@ -452,13 +567,86 @@ function openDetail(id) {
   document.getElementById(`btn-edit-${id}`).addEventListener('click', () => editRecipe(id));
   document.getElementById(`btn-translate-${id}`).addEventListener('click', () => translateDetail(id));
   document.getElementById(`btn-delete-${id}`).addEventListener('click', () => askDelete(id));
+  const cookBtn = document.getElementById(`btn-cook-${id}`);
+  if (cookBtn) cookBtn.addEventListener('click', () => openCookMode(id));
 
   openSheet('detail-sheet');
 }
 
-/* ── TRANSLATION (Google Translate unofficial API) ──────── */
-const translationCache = {};
+/* ── COOK MODE (paso a paso a pantalla completa) ────────── */
+let cookSteps = [];
+let cookIndex = 0;
 
+function openCookMode(id) {
+  const r = recipes.find(x => x.id === id);
+  if (!r || !(r.steps||[]).length) return;
+  cookSteps = r.steps;
+  cookIndex = 0;
+  document.getElementById('cook-recipe-name').textContent = r.name;
+  renderCookStep();
+  document.getElementById('cook-mode').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderCookStep() {
+  const total = cookSteps.length;
+  const n = cookIndex + 1;
+  document.getElementById('cook-step-counter').textContent = `Paso ${n} de ${total}`;
+  document.getElementById('cook-step-text').textContent = cookSteps[cookIndex];
+  document.getElementById('cook-progress-bar').style.width = (n / total * 100) + '%';
+
+  const prev = document.getElementById('cook-prev');
+  const next = document.getElementById('cook-next');
+  prev.disabled = cookIndex === 0;
+  next.textContent = (cookIndex === total - 1) ? '¡Listo! ✓' : 'Siguiente →';
+}
+
+function cookNext() {
+  if (cookIndex < cookSteps.length - 1) {
+    cookIndex++;
+    renderCookStep();
+  } else {
+    closeCookMode();
+    showToast('¡Buen provecho! 🎉');
+  }
+}
+
+function cookPrev() {
+  if (cookIndex > 0) {
+    cookIndex--;
+    renderCookStep();
+  }
+}
+
+function closeCookMode() {
+  document.getElementById('cook-mode').classList.remove('open');
+  // Si el detalle sigue abierto debajo, mantenemos el scroll bloqueado
+  const detailOpen = document.getElementById('detail-sheet').classList.contains('open');
+  if (!detailOpen) document.body.style.overflow = '';
+}
+
+document.getElementById('cook-close').addEventListener('click', closeCookMode);
+document.getElementById('cook-next').addEventListener('click', cookNext);
+document.getElementById('cook-prev').addEventListener('click', cookPrev);
+
+// Navegación con teclado (útil en escritorio)
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('cook-mode').classList.contains('open')) return;
+  if (e.key === 'ArrowRight') cookNext();
+  else if (e.key === 'ArrowLeft') cookPrev();
+  else if (e.key === 'Escape') closeCookMode();
+});
+
+// Swipe para navegar entre pasos
+let cookTouchX0 = 0;
+const cookModeEl = document.getElementById('cook-mode');
+cookModeEl.addEventListener('touchstart', e => { cookTouchX0 = e.touches[0].clientX; }, { passive: true });
+cookModeEl.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - cookTouchX0;
+  if (dx < -60) cookNext();
+  else if (dx > 60) cookPrev();
+}, { passive: true });
+const translationCache = {};
 async function gtranslate(text, target='en') {
   if (!text || !text.trim()) return text;
   const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=${target}&dt=t&q=${encodeURIComponent(text)}`;
@@ -498,12 +686,10 @@ async function translateDetail(id) {
 
   btn.textContent = '⏳';
   btn.disabled = true;
-
   try {
     // Collect all strings to translate in one batch
-    const ingNames  = (r.ingredients || []).map(i => i.name);
-    const steps     = r.steps || [];
-
+    const ingNames = (r.ingredients || []).map(i => i.name);
+    const steps = r.steps || [];
     const allStrings = [
       r.name,
       r.description || '',
@@ -513,23 +699,19 @@ async function translateDetail(id) {
       ...ingNames,
       ...steps,
     ];
-
     const results = await translateStrings(allStrings);
-
     let i = 0;
     const t = {
-      name:        results[i++],
+      name: results[i++],
       description: results[i++],
-      category:    results[i++],
-      difficulty:  results[i++],
-      tips:        results[i++],
-      ingNames:    ingNames.map(() => results[i++]),
-      steps:       steps.map(() => results[i++]),
+      category: results[i++],
+      difficulty: results[i++],
+      tips: results[i++],
+      ingNames: ingNames.map(() => results[i++]),
+      steps: steps.map(() => results[i++]),
     };
-
     translationCache[id] = t;
     applyTranslation(id, t);
-
   } catch(e) {
     btn.textContent = '🇬🇧';
     btn.disabled = false;
@@ -539,33 +721,29 @@ async function translateDetail(id) {
 
 function applyTranslation(id, t) {
   const titleEl = document.querySelector('#detail-inner .detail-title');
-  const descEl  = document.querySelector('#detail-inner .detail-desc');
-  const catEl   = document.querySelector('#detail-inner .detail-cat');
-
+  const descEl = document.querySelector('#detail-inner .detail-desc');
+  const catEl = document.querySelector('#detail-inner .detail-cat');
   if (titleEl) titleEl.textContent = t.name;
-  if (descEl)  descEl.textContent  = t.description;
-  if (catEl)   catEl.textContent   = t.category;
-
+  if (descEl) descEl.textContent = t.description;
+  if (catEl) catEl.textContent = t.category;
   document.querySelectorAll('#detail-inner .ing-name-text').forEach((el, i) => {
     if (t.ingNames?.[i] != null) el.textContent = t.ingNames[i];
   });
-
   document.querySelectorAll('#detail-inner .step-text').forEach((el, i) => {
     if (t.steps?.[i] != null) el.textContent = t.steps[i];
   });
-
   const tipsEl = document.querySelector('#detail-inner .tips-box');
   if (tipsEl && t.tips) tipsEl.textContent = t.tips;
-
   document.querySelectorAll('#detail-inner .sec-title').forEach(el => {
     const txt = el.textContent.trim();
     if (txt === 'Ingredientes') el.textContent = 'Ingredients';
-    if (txt === 'Elaboración')  el.textContent = 'Preparation';
-    if (txt === 'Consejo')      el.textContent = 'Tip';
+    if (txt === 'Elaboración') el.textContent = 'Preparation';
+    if (txt === 'Consejo') el.textContent = 'Tip';
+    if (txt === 'Receta original') el.textContent = 'Original recipe';
   });
-
-  const diffEl = document.querySelector('#detail-inner .dstat-val');
-  // difficulty is the 4th dstat — find by label
+  // Traduce el texto del enlace de fuente si existe
+  const srcText = document.querySelector('#detail-inner .source-text');
+  if (srcText) srcText.textContent = srcText.textContent.replace('Ver en', 'View on');
   document.querySelectorAll('#detail-inner .dstat').forEach(ds => {
     const lbl = ds.querySelector('.dstat-lbl');
     if (lbl && lbl.textContent.trim() === 'Nivel') {
@@ -577,7 +755,6 @@ function applyTranslation(id, t) {
     if (lbl && lbl.textContent.trim() === 'Cocción') lbl.textContent = 'Cook';
     if (lbl && lbl.textContent.trim() === 'Raciones') lbl.textContent = 'Servings';
   });
-
   const btn = document.getElementById(`btn-translate-${id}`);
   btn.textContent = '🇪🇸';
   btn.title = 'Volver al español';
@@ -635,27 +812,221 @@ function selectDiet(el) {
   el.classList.add('active');
 }
 
+/* ── IMPORTAR RECETA DESDE ENLACE ───────────────────────── */
+// Lista de proxies CORS públicos (se prueban en orden si uno falla)
+const CORS_PROXIES = [
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+async function fetchHtmlViaProxy(url) {
+  let lastErr = null;
+  for (const proxify of CORS_PROXIES) {
+    try {
+      const res = await fetch(proxify(url));
+      if (!res.ok) { lastErr = new Error('HTTP ' + res.status); continue; }
+      const html = await res.text();
+      if (html && html.length > 200) return html;
+    } catch(e) { lastErr = e; }
+  }
+  throw lastErr || new Error('No se pudo descargar la página');
+}
+
+// Convierte una duración ISO 8601 (PT1H30M) a algo legible ("1 h 30 min")
+function parseISODuration(iso) {
+  if (!iso || typeof iso !== 'string') return '';
+  const m = iso.match(/P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?/);
+  if (!m) return '';
+  const d = parseInt(m[1]||0), h = parseInt(m[2]||0), min = parseInt(m[3]||0);
+  const parts = [];
+  if (d) parts.push(d + ' d');
+  if (h) parts.push(h + ' h');
+  if (min) parts.push(min + ' min');
+  return parts.join(' ');
+}
+
+// Normaliza un ingrediente "1 1/2 cups flour" -> { amount, name } separando
+// la parte numérica/unidad del nombre. Heurística sencilla y conservadora.
+function splitIngredient(raw) {
+  const text = String(raw).replace(/\s+/g, ' ').trim();
+  // Captura número (incluye fracciones y rangos) + unidad opcional al inicio
+  const m = text.match(/^([\d¼½¾⅓⅔⅛\/.,\s-]+(?:g|kg|ml|l|oz|lb|cups?|cup|tbsp|tsp|cdas?|cdtas?|cucharadas?|cucharaditas?|tazas?|taza|sobres?|pizcas?|g\.|gr|gramos?)?)\s+(.*)$/i);
+  if (m && m[2]) {
+    return { amount: m[1].trim(), name: m[2].trim() };
+  }
+  return { amount: '', name: text };
+}
+
+// Extrae el objeto Recipe del JSON-LD de la página
+function extractRecipeFromHtml(html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const scripts = [...doc.querySelectorAll('script[type="application/ld+json"]')];
+
+  let recipeNode = null;
+  for (const s of scripts) {
+    let data;
+    try { data = JSON.parse(s.textContent); } catch(e) { continue; }
+    // El JSON-LD puede ser un objeto, un array, o tener @graph
+    const candidates = [];
+    const pushAll = obj => {
+      if (!obj) return;
+      if (Array.isArray(obj)) obj.forEach(pushAll);
+      else {
+        candidates.push(obj);
+        if (obj['@graph']) pushAll(obj['@graph']);
+      }
+    };
+    pushAll(data);
+    recipeNode = candidates.find(c => {
+      const t = c['@type'];
+      return t === 'Recipe' || (Array.isArray(t) && t.includes('Recipe'));
+    });
+    if (recipeNode) break;
+  }
+
+  if (!recipeNode) return null;
+
+  // Ingredientes
+  const ingRaw = recipeNode.recipeIngredient || recipeNode.ingredients || [];
+  const ingredients = (Array.isArray(ingRaw) ? ingRaw : [ingRaw])
+    .map(splitIngredient).filter(i => i.name);
+
+  // Pasos: recipeInstructions puede ser texto, array de strings,
+  // array de HowToStep, o HowToSection con itemListElement
+  const steps = [];
+  const collectSteps = node => {
+    if (!node) return;
+    if (typeof node === 'string') {
+      const t = node.replace(/\s+/g, ' ').trim();
+      if (t) steps.push(t);
+    } else if (Array.isArray(node)) {
+      node.forEach(collectSteps);
+    } else if (typeof node === 'object') {
+      if (node['@type'] === 'HowToSection' && node.itemListElement) {
+        collectSteps(node.itemListElement);
+      } else if (node.text) {
+        const t = String(node.text).replace(/\s+/g, ' ').trim();
+        if (t) steps.push(t);
+      }
+    }
+  };
+  collectSteps(recipeNode.recipeInstructions);
+
+  // Raciones
+  let servings = recipeNode.recipeYield || '';
+  if (Array.isArray(servings)) servings = servings[0] || '';
+  servings = String(servings).trim();
+
+  // Imagen / nombre / descripción
+  const name = (recipeNode.name || '').trim();
+  let description = (recipeNode.description || '').trim();
+  if (description.length > 220) description = description.slice(0, 217) + '…';
+
+  return {
+    name,
+    description,
+    category: (Array.isArray(recipeNode.recipeCategory) ? recipeNode.recipeCategory[0] : recipeNode.recipeCategory || '').trim(),
+    prepTime: parseISODuration(recipeNode.prepTime),
+    cookTime: parseISODuration(recipeNode.cookTime),
+    totalTime: parseISODuration(recipeNode.totalTime),
+    servings,
+    ingredients,
+    steps,
+  };
+}
+
+async function importFromUrl() {
+  const url = document.getElementById('f-import-url').value.trim();
+  if (!url) { showToast('Pega una URL primero'); return; }
+  let valid;
+  try { valid = new URL(url); } catch(e) { showToast('La URL no es válida'); return; }
+
+  const btn = document.getElementById('btn-import');
+  const original = btn.textContent;
+  btn.textContent = '⏳';
+  btn.disabled = true;
+
+  try {
+    const html = await fetchHtmlViaProxy(url);
+    const data = extractRecipeFromHtml(html);
+    if (!data || !data.name || (!data.ingredients.length && !data.steps.length)) {
+      showToast('No se encontró una receta en esa página');
+      return;
+    }
+    fillFormFromImport(data, url);
+    showToast('Datos importados — revísalos antes de guardar ✓');
+  } catch(e) {
+    showToast('No se pudo leer la página. Prueba otro enlace.');
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+
+// Rellena los campos del formulario con lo importado.
+// No sobreescribe diet/allergens: los marcas tú manualmente.
+function fillFormFromImport(data, url) {
+  const setIf = (elId, val) => {
+    const el = document.getElementById(elId);
+    if (el && val) el.value = val;
+  };
+  setIf('f-name', data.name);
+  setIf('f-desc', data.description);
+  setIf('f-cat', data.category);
+  setIf('f-prep', data.prepTime);
+  setIf('f-cook', data.cookTime);
+  setIf('f-total', data.totalTime);
+  setIf('f-servings', data.servings);
+  setIf('f-source', url); // el enlace importado pasa a ser la receta original
+
+  // Ingredientes
+  if (data.ingredients.length) {
+    const ingList = document.getElementById('ing-list');
+    ingList.innerHTML = '';
+    data.ingredients.forEach(ing => addIng(ing.amount, ing.name));
+  }
+
+  // Pasos
+  if (data.steps.length) {
+    const stepList = document.getElementById('step-list');
+    stepList.innerHTML = '';
+    data.steps.forEach(s => addStep(s));
+  }
+
+  // Lleva el foco al nombre para empezar a revisar desde arriba
+  document.getElementById('f-name').focus();
+  document.querySelector('.form-body').scrollTop = 0;
+}
+
 function openForm(editId) {
   const r = editId ? recipes.find(x => x.id === editId) : null;
   document.getElementById('form-title').textContent = r ? 'Editar receta' : 'Nueva receta';
   document.getElementById('f-id').value = r ? String(r.id) : '';
 
+  // El bloque de importar solo aparece al crear, no al editar
+  const importBox = document.getElementById('import-box');
+  if (importBox) {
+    importBox.style.display = r ? 'none' : '';
+    const urlInput = document.getElementById('f-import-url');
+    if (urlInput) urlInput.value = '';
+  }
+
   const setVal = (elId, val) => {
     const el = document.getElementById(elId);
     if (el) el.value = (val != null ? val : '');
   };
-
-  setVal('f-name',     r?.name);
-  setVal('f-desc',     r?.description);
-  setVal('f-emoji',    r?.emoji);
-  setVal('f-cat',      r?.category);
-  setVal('f-prep',     r?.prepTime);
-  setVal('f-cook',     r?.cookTime);
-  setVal('f-total',    r?.totalTime);
+  setVal('f-name', r?.name);
+  setVal('f-desc', r?.description);
+  setVal('f-emoji', r?.emoji);
+  setVal('f-cat', r?.category);
+  setVal('f-prep', r?.prepTime);
+  setVal('f-cook', r?.cookTime);
+  setVal('f-total', r?.totalTime);
   setVal('f-servings', r?.servings);
-  setVal('f-tips',     r?.tips);
-  setVal('f-tags',     r ? (r.tags||[]).join(', ') : '');
-  document.getElementById('f-diff').value  = r?.difficulty || 'Fácil';
+  setVal('f-source', r?.sourceUrl);
+  setVal('f-tips', r?.tips);
+  setVal('f-tags', r ? (r.tags||[]).join(', ') : '');
+  document.getElementById('f-diff').value = r?.difficulty || 'Fácil';
   document.getElementById('f-color').value = r?.color || '#f5e0c0';
 
   // Diet
@@ -763,12 +1134,13 @@ function saveRecipe() {
     description: document.getElementById('f-desc').value.trim(),
     emoji: document.getElementById('f-emoji').value.trim() || '🍽️',
     category: document.getElementById('f-cat').value.trim() || 'Sin categoría',
-    prepTime:  document.getElementById('f-prep').value.trim() || '—',
-    cookTime:  document.getElementById('f-cook').value.trim() || '—',
+    prepTime: document.getElementById('f-prep').value.trim() || '—',
+    cookTime: document.getElementById('f-cook').value.trim() || '—',
     totalTime: document.getElementById('f-total').value.trim() || '—',
-    servings:  document.getElementById('f-servings').value.trim() || '—',
+    servings: document.getElementById('f-servings').value.trim() || '—',
     difficulty: document.getElementById('f-diff').value,
     color: document.getElementById('f-color').value,
+    sourceUrl: document.getElementById('f-source').value.trim(),
     diet, allergens, tags, ingredients, steps,
     tips: document.getElementById('f-tips').value.trim(),
   };

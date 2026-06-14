@@ -549,6 +549,29 @@ body {
   color: var(--text-2);
 }
 
+/* Source link — enlace a la receta original */
+.source-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--accent);
+  background: var(--accent-light);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.1s;
+}
+.source-link:active { transform: scale(0.985); }
+@media (hover: hover) {
+  .source-link:hover { background: var(--accent); color: var(--bg); }
+}
+.source-icon { font-size: 1rem; flex-shrink: 0; }
+.source-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-arrow { font-size: 0.95rem; opacity: 0.7; flex-shrink: 0; }
+
 .detail-actions { display: flex; gap: 8px; margin-top: 24px; }
 .btn-edit {
   flex: 1;
@@ -759,3 +782,227 @@ body {
   z-index: 500;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ══ DIET / ALLERGEN FILTER ROW ══════════════════════════════ */
+.filter-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+}
+.filter-pill {
+  flex-shrink: 0;
+  padding: 4px 11px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.filter-pill.active {
+  background: #d4edda;
+  color: #2d6a4f;
+  border-color: #2d6a4f;
+  font-weight: 600;
+}
+[data-theme="dark"] .filter-pill.active { background: #1a3d2a; color: #52b788; border-color: #52b788; }
+.filter-pill-exclude.active {
+  background: var(--accent-light);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.filter-sep {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 600;
+  margin: 0 2px 0 6px;
+}
+
+/* ══ COOK MODE BUTTON ════════════════════════════════════════ */
+.sec-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 20px 0 10px;
+}
+.sec-title-row .sec-title { margin: 0; }
+.btn-cook {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 99px;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.15s;
+}
+.btn-cook:active { transform: scale(0.95); }
+@media (hover: hover) { .btn-cook:hover { filter: brightness(1.08); } }
+
+/* ══ COOK MODE OVERLAY ═══════════════════════════════════════ */
+.cook-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.cook-mode.open { opacity: 1; pointer-events: all; }
+
+.cook-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  flex-shrink: 0;
+}
+.cook-recipe-name {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cook-close {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.cook-progress {
+  height: 4px;
+  background: var(--surface-2);
+  margin: 0 20px;
+  border-radius: 99px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.cook-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.cook-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 28px;
+  text-align: center;
+  overflow-y: auto;
+}
+.cook-step-counter {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+.cook-step-text {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  line-height: 1.4;
+  color: var(--text);
+  max-width: 600px;
+}
+@media (min-width: 700px) {
+  .cook-step-text { font-size: 2.1rem; }
+}
+
+.cook-nav {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  flex-shrink: 0;
+}
+.cook-nav-btn {
+  flex: 1;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.15s;
+}
+.cook-nav-btn:active { transform: scale(0.97); }
+.cook-nav-btn:disabled { opacity: 0.35; cursor: default; }
+.cook-nav-next {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ══ IMPORTAR DESDE ENLACE ═══════════════════════════════════ */
+.import-box {
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.import-row {
+  display: flex;
+  gap: 8px;
+}
+.import-row .f-input {
+  flex: 1;
+  background: var(--surface);
+}
+.btn-import {
+  flex-shrink: 0;
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.15s;
+}
+.btn-import:active { transform: scale(0.95); }
+.btn-import:disabled { opacity: 0.6; cursor: wait; }
+@media (hover: hover) { .btn-import:hover { filter: brightness(1.08); } }
+.import-hint {
+  font-size: 0.74rem;
+  color: var(--text-2);
+  line-height: 1.4;
+}
