@@ -13,6 +13,7 @@
     "servings": "~600 g",
     "difficulty": "Fácil",
     "diet": null,
+    "sourceUrl": "",
     "tags": [
       "galletas",
       "repostería",
@@ -100,6 +101,7 @@
     "servings": "12-14 uds",
     "difficulty": "Media",
     "diet": "vegano",
+    "sourceUrl": "https://tasty.co/recipe/the-best-ever-vegan-cinnamon-rolls",
     "tags": [
       "bollería",
       "canela"
@@ -186,6 +188,7 @@
     "servings": "9 grandes / 12 normales",
     "difficulty": "Fácil",
     "diet": null,
+    "sourceUrl": "https://butternutbakeryblog.com/best-chocolate-chip-cookies/",
     "tags": [
       "cookies",
       "chocolate"
@@ -268,6 +271,7 @@
     "servings": "1 hogaza",
     "difficulty": "Difícil",
     "diet": "vegano",
+    "sourceUrl": "",
     "tags": [
       "pan",
       "masa madre"
@@ -311,5 +315,319 @@
       "Deja enfriar sobre rejilla mínimo 2 horas antes de cortar."
     ],
     "tips": "La masa madre debe estar activa: aliméntala 4-8 horas antes de usarla, cuando esté en su punto álgido. La cocotte es clave para la corteza: crea vapor que permite que el pan se abra bien."
+  },
+  {
+    "id": 5,
+    "name": "Roscón de Reyes",
+    "category": "Bollería",
+    "description": "Roscón artesano y esponjoso, con prefermento, aromatizado con agua de azahar, ralladura de limón y vainilla. Receta del curso de Esther Sánchez (Chocolatísimo).",
+    "emoji": "👑",
+    "color": "#f0c878",
+    "accent": "#c97e1a",
+    "prepTime": "1 h",
+    "cookTime": "30 min",
+    "totalTime": "8-9 h (mismo día)",
+    "servings": "1 grande / 2 medianos",
+    "difficulty": "Difícil",
+    "diet": "vegetariano",
+    "sourceUrl": "",
+    "tags": [
+      "roscón",
+      "navidad",
+      "prefermento",
+      "agua de azahar"
+    ],
+    "allergens": [
+      "gluten",
+      "lacteos",
+      "huevos"
+    ],
+    "ingredients": [
+      {
+        "amount": "—",
+        "name": "PREFERMENTO:"
+      },
+      {
+        "amount": "100 g",
+        "name": "agua tibia"
+      },
+      {
+        "amount": "50 g",
+        "name": "azúcar"
+      },
+      {
+        "amount": "100 g",
+        "name": "harina de fuerza"
+      },
+      {
+        "amount": "7 g",
+        "name": "levadura seca"
+      },
+      {
+        "amount": "—",
+        "name": "MASA:"
+      },
+      {
+        "amount": "450 g",
+        "name": "harina de fuerza"
+      },
+      {
+        "amount": "90 g",
+        "name": "azúcar"
+      },
+      {
+        "amount": "2",
+        "name": "huevos medianos (a temperatura ambiente)"
+      },
+      {
+        "amount": "150 g",
+        "name": "leche entera templada (máx. 30 °C)"
+      },
+      {
+        "amount": "85 g",
+        "name": "mantequilla sin sal (fría)"
+      },
+      {
+        "amount": "6 g",
+        "name": "levadura seca"
+      },
+      {
+        "amount": "5 g",
+        "name": "sal fina"
+      },
+      {
+        "amount": "35 g",
+        "name": "miel"
+      },
+      {
+        "amount": "2-3 cdas",
+        "name": "agua de azahar (uso alimenticio)"
+      },
+      {
+        "amount": "1",
+        "name": "ralladura de limón mediano"
+      },
+      {
+        "amount": "1 cdta",
+        "name": "vainilla"
+      },
+      {
+        "amount": "—",
+        "name": "Decoración: huevo batido, almendra laminada sin tostar, fruta escarchada, azúcar humedecida"
+      }
+    ],
+    "steps": [
+      "Prefermento: mezcla bien el agua tibia, el azúcar, la harina de fuerza y los 7 g de levadura. Deja fermentar 2 horas a temperatura ambiente.",
+      "Agrega al prefermento el resto de ingredientes de la masa (la mantequilla fría, la levadura disuelta) y amasa 25 minutos hasta que quede lisa y elástica.",
+      "Primera fermentación en bloque: deja reposar la masa tapada a temperatura ambiente unas 3 horas (puede estirarse hasta 5 h).",
+      "Desgasifica la masa (quítale el aire) y forma una bola. Reposa 20 minutos.",
+      "Da una primera forma al roscón y reposa 10 minutos. Da una segunda forma y reposa otros 10 minutos.",
+      "Forma final del roscón sobre la bandeja. Fermenta 1 h 30 - 2 h, hasta que doble su volumen (cocina a 22-24 °C).",
+      "Pinta con huevo batido y decora con almendra laminada, fruta escarchada y azúcar humedecida con las manos.",
+      "Hornea a 180 °C, calor arriba y abajo SIN aire, con el horno precalentado 15 min. Roscón mediano: 25-30 min (pequeño 20-25, grande 35-40, individuales 18-20).",
+      "Deja enfriar mínimo 1 hora antes de rellenar o consumir."
+    ],
+    "tips": "MÉTODO 2 (comerlo al día siguiente): tras la fermentación en bloque de 3 horas, mete la masa en la nevera mínimo 10 horas (máx. 18) y retoma desde el desgasificado a la mañana siguiente. SIN LACTOSA: sustituye la leche por 150 g de agua tibia y la mantequilla por 85 g de margarina. La harina de fuerza tiene 12-14% de proteína; la de gran fuerza da aún más esponjosidad. El agua/leche templada no debe pasar de 30 °C. Si usas levadura fresca en vez de seca, multiplica x3 (7 g seca = 21 g fresca). El prefermento aguanta máx. 6 h a temperatura ambiente o 12 h en nevera."
+  },
+  {
+    "id": 6,
+    "name": "Naranjas Confitadas",
+    "category": "Repostería",
+    "description": "Naranjas confitadas caseras en almíbar, perfectas para decorar el roscón o bañar en chocolate negro. Le dan mil vueltas a las industriales. Receta de Esther Sánchez (Chocolatísimo).",
+    "emoji": "🍊",
+    "color": "#f5a623",
+    "accent": "#d2691e",
+    "prepTime": "20 min",
+    "cookTime": "40 min",
+    "totalTime": "2 h 30 min",
+    "servings": "1 kg de naranjas",
+    "difficulty": "Media",
+    "diet": "vegano",
+    "sourceUrl": "",
+    "tags": [
+      "confitado",
+      "naranja",
+      "decoración",
+      "almíbar"
+    ],
+    "allergens": [],
+    "ingredients": [
+      {
+        "amount": "1 kg",
+        "name": "naranjas"
+      },
+      {
+        "amount": "1 kg",
+        "name": "azúcar (puede reducirse a 700 g)"
+      },
+      {
+        "amount": "1 l",
+        "name": "agua (entre 600-800 g según gusto)"
+      },
+      {
+        "amount": "—",
+        "name": "Proporción base: 1 parte naranja, 1 parte azúcar, 1 parte agua"
+      }
+    ],
+    "steps": [
+      "Corta las naranjas en rodajas y cada rodaja por la mitad.",
+      "Mételas en una olla con agua hasta cubrirlas. Cuando rompa a hervir, cuenta 5 minutos.",
+      "Escurre y repite el hervido dos veces más (tres en total) para quitar el amargor. Prueba un trozo: si siguen amargas, dales un hervor extra.",
+      "Para confitar: añade a la olla el mismo peso de azúcar y de agua que de naranjas, y lleva a ebullición.",
+      "Cuando hierva, cuenta 10 minutos a fuego fuerte, luego baja a fuego medio-alto.",
+      "Lleva la cocción hasta 107 °C (punto de hebra fina), removiendo de vez en cuando o moviendo la olla para no romper las naranjas. Necesitas termómetro o saber medir los puntos del azúcar.",
+      "Pasa a un recipiente nuevo y deja enfriar 1 h 30 - 2 h antes de guardar en tarros.",
+      "Si vas a bañarlas en chocolate negro, escúrrelas antes en una rejilla 30-40 minutos."
+    ],
+    "tips": "Guárdalas cubiertas por el almíbar en tarros: se conservan mejor y el almíbar sobrante sirve para otras elaboraciones. La cantidad de azúcar es 100% a gusto. Sin termómetro, busca el punto de 'hebra fina' del azúcar."
+  },
+  {
+    "id": 7,
+    "name": "Bánh Mì",
+    "category": "Panadería",
+    "description": "La baguette vietnamita: pequeña, de corteza fina y miga ligera, herencia de la colonización francesa. La base del famoso bocadillo vietnamita. Receta del libro Planeta Pan.",
+    "emoji": "🥖",
+    "color": "#e8c89a",
+    "accent": "#a9743a",
+    "prepTime": "30 min",
+    "cookTime": "20 min",
+    "totalTime": "12 h + 4 h",
+    "servings": "4 panes",
+    "difficulty": "Media",
+    "diet": "vegano",
+    "sourceUrl": "",
+    "tags": [
+      "pan",
+      "vietnam",
+      "baguette",
+      "prefermento",
+      "poolish"
+    ],
+    "allergens": [
+      "gluten"
+    ],
+    "ingredients": [
+      {
+        "amount": "—",
+        "name": "PREFERMENTO (poolish, la noche antes):"
+      },
+      {
+        "amount": "75 g",
+        "name": "harina de trigo (180W)"
+      },
+      {
+        "amount": "75 g",
+        "name": "agua"
+      },
+      {
+        "amount": "1 bolita",
+        "name": "levadura fresca (tamaño lenteja)"
+      },
+      {
+        "amount": "—",
+        "name": "MASA:"
+      },
+      {
+        "amount": "250 g",
+        "name": "harina de trigo (180W)"
+      },
+      {
+        "amount": "110 g",
+        "name": "agua templada"
+      },
+      {
+        "amount": "15 g",
+        "name": "aceite de oliva virgen extra"
+      },
+      {
+        "amount": "5 g",
+        "name": "sal"
+      },
+      {
+        "amount": "10 g",
+        "name": "azúcar"
+      },
+      {
+        "amount": "3 g",
+        "name": "levadura fresca"
+      }
+    ],
+    "steps": [
+      "La noche anterior, prepara el prefermento: deshaz la levadura en la harina o el agua, mezcla bien y deja fermentar toda la noche (10-12 horas). Estará lleno de aire y aroma.",
+      "Mezcla todos los ingredientes de la masa con el prefermento, deshaciendo la levadura en el agua o la harina. La masa resultante es muy manejable. Deja reposar 30 minutos.",
+      "Amasa un par de minutos en la mesa con el canto de la mano. Reposa 15 minutos.",
+      "Repite otro pequeño amasado. Una hora después de mezclar, la masa estará prácticamente lisa.",
+      "Deja fermentar 2 horas a temperatura ambiente, hasta que duplique su tamaño.",
+      "Divide en 4 porciones de unos 130 g y forma bolas, desgasificando bien para que no queden grandes agujeros. Reposa 10 minutos con un poco de harina.",
+      "Forma final: coloca la parte bonita de cada bola sobre la mesa enharinada y enróllala sobre sí misma presionando desde arriba (al menos 3 vueltas) hasta cerrarla. Sella la unión de los extremos.",
+      "Si quieres picos afilados, hazlos con el interior de la palma. Coloca en bandeja aceitada o con papel y deja fermentar 1 hora más.",
+      "Cuando hayan crecido al límite de fermentación, dales un corte a lo largo con una cuchilla afilada.",
+      "Hornea generando humedad: precalienta un cuenco metálico con piedras 20-30 min dentro del horno; al meter los panes vuelca medio vaso de agua en el cuenco y cierra. Hornea hasta que abran y doren (unos 20 min)."
+    ],
+    "tips": "Para el bocadillo bánh mì al estilo vietnamita: carne a la parrilla, zanahoria, rábano y pepino encurtidos, mucho cilantro, mayonesa y salsa Maggi o de soja. (Nota: la masa del pan en sí es vegana; los rellenos no.) Si consigues piedras volcánicas para generar vapor, mejor."
+  },
+  {
+    "id": 8,
+    "name": "Crumpets",
+    "category": "Panadería",
+    "description": "Tortitas inglesas de masa líquida muy hidratada, esponjosas y llenas de agujeritos, hechas en sartén con aros de metal. Insultantemente fáciles. Receta del libro Planeta Pan.",
+    "emoji": "🧇",
+    "color": "#f0d8a8",
+    "accent": "#b8862f",
+    "prepTime": "15 min",
+    "cookTime": "20 min",
+    "totalTime": "2 h 30 min",
+    "servings": "8-10 uds",
+    "difficulty": "Fácil",
+    "diet": "vegetariano",
+    "sourceUrl": "",
+    "tags": [
+      "crumpets",
+      "inglaterra",
+      "sartén",
+      "desayuno"
+    ],
+    "allergens": [
+      "gluten",
+      "lacteos"
+    ],
+    "ingredients": [
+      {
+        "amount": "300 g",
+        "name": "harina para múltiples usos"
+      },
+      {
+        "amount": "400 g",
+        "name": "leche templada (máx. 30 °C)"
+      },
+      {
+        "amount": "6 g",
+        "name": "levadura fresca"
+      },
+      {
+        "amount": "4 g",
+        "name": "sal"
+      },
+      {
+        "amount": "3 g",
+        "name": "polvo de hornear"
+      },
+      {
+        "amount": "—",
+        "name": "Necesitas aros de metal de 8-10 cm"
+      }
+    ],
+    "steps": [
+      "Tamiza la harina sobre un cuenco para que la masa quede fina y sin grumos.",
+      "Añade los ingredientes secos: el polvo de hornear y la sal. Mezcla con las manos y haz un hueco en el centro como un volcán.",
+      "Vuelca en el hueco la leche templada (no más de 30 °C para no dañar la levadura) y disuelve en ella la levadura fresca.",
+      "Con unas varillas, mezcla bien todos los ingredientes. Es una masa líquida de altísima hidratación: no se amasa.",
+      "Deja fermentar 1 h 30 - 2 h, hasta que aumente notablemente y esté esponjosa y burbujeante. Puedes hacerlo en una jarra para volcar mejor.",
+      "Engrasa el interior de los aros de metal con mantequilla o aceite. Calienta una sartén a fuego medio y pinta el fondo con mantequilla.",
+      "Coloca el aro en la sartén y vuelca dentro un fondo de masa de unos 2 cm de alto (no más, o le costará cocinarse).",
+      "Cocina a fuego medio-bajo y despacio. El calor sube por el molde y se forman los agujeritos característicos en la superficie. Vigila que la base se dore sin quemarse.",
+      "Desmolda con ayuda de un paño. Tuesta ligeramente la cara superior. Una vez cogido el truco, haz varios a la vez para que la masa no se sobrefermente."
+    ],
+    "tips": "Se comen en desayuno o merienda con mantequilla y mermelada, o con bacon y huevos. Perfectos con un huevo frito encima dejando que la yema entre por los huecos. No hace falta dorarlos mucho: puedes pasarlos por la tostadora justo antes de comerlos."
   }
 ]
