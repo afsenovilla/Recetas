@@ -47,6 +47,7 @@
 <!-- ══ DETAIL SHEET ════════════════════════════════════════ -->
 <div class="sheet" id="detail-sheet">
   <div class="sheet-handle"></div>
+  <button class="detail-close" onclick="closeAll()" aria-label="Cerrar">✕</button>
   <div id="detail-inner"></div>
 </div>
 
@@ -54,7 +55,10 @@
 <div class="cook-mode" id="cook-mode">
   <div class="cook-header">
     <span class="cook-recipe-name" id="cook-recipe-name"></span>
-    <button class="cook-close" id="cook-close" type="button" aria-label="Salir">✕</button>
+    <div class="cook-header-btns">
+      <button class="cook-ing-btn" id="cook-ing-btn" type="button">🥗 Ingredientes</button>
+      <button class="cook-close" id="cook-close" type="button" aria-label="Salir">✕</button>
+    </div>
   </div>
   <div class="cook-progress"><div class="cook-progress-bar" id="cook-progress-bar"></div></div>
   <div class="cook-body">
@@ -64,6 +68,14 @@
   <div class="cook-nav">
     <button class="cook-nav-btn" id="cook-prev" type="button">← Anterior</button>
     <button class="cook-nav-btn cook-nav-next" id="cook-next" type="button">Siguiente →</button>
+  </div>
+  <!-- Panel desplegable de ingredientes -->
+  <div class="cook-ingredients" id="cook-ingredients">
+    <div class="cook-ing-header">
+      <span>Ingredientes</span>
+      <button class="cook-ing-close" type="button" onclick="toggleCookIngredients()" aria-label="Cerrar ingredientes">✕</button>
+    </div>
+    <ul class="cook-ing-list" id="cook-ing-list"></ul>
   </div>
 </div>
 
@@ -162,7 +174,10 @@
     <div class="f-group">
       <label class="f-label">Ingredientes</label>
       <div class="dyn-list" id="ing-list"></div>
-      <button class="btn-add-row" type="button" onclick="addIng()">+ Añadir ingrediente</button>
+      <div class="add-row-pair">
+        <button class="btn-add-row" type="button" onclick="addIng()">+ Añadir ingrediente</button>
+        <button class="btn-add-row btn-add-group" type="button" onclick="addIngGroup()">+ Añadir grupo</button>
+      </div>
     </div>
     <div class="f-group">
       <label class="f-label">Pasos</label>
@@ -224,40 +239,64 @@ let done = {};
 
 /* ── WAKE LOCK ──────────────────────────────────────────── */
 let wakeLock = null;
-async function toggleWakeLock() {
-  const btn = document.getElementById('wake-btn');
+let wakeByUser = false;   // activado a mano desde el botón del header
+let wakeByCook = false;   // activado automáticamente por el modo cocina
+
+async function acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return false;
+  if (wakeLock) return true; // ya activo
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+    return true;
+  } catch(e) { return false; }
+}
+
+async function releaseWakeLock() {
   if (wakeLock) {
-    await wakeLock.release();
+    try { await wakeLock.release(); } catch(e) {}
     wakeLock = null;
+  }
+}
+
+function updateWakeBtn() {
+  const btn = document.getElementById('wake-btn');
+  if (wakeByUser) {
+    btn.textContent = '👁️';
+    btn.classList.add('wake-active');
+  } else {
     btn.textContent = '💤';
     btn.classList.remove('wake-active');
+  }
+}
+
+async function toggleWakeLock() {
+  if (wakeByUser) {
+    wakeByUser = false;
+    updateWakeBtn();
     showToast('Pantalla normal');
+    // Solo soltamos de verdad si el modo cocina tampoco lo necesita
+    if (!wakeByCook) await releaseWakeLock();
   } else {
     if (!('wakeLock' in navigator)) {
       showToast('Tu navegador no soporta esta función');
       return;
     }
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      btn.textContent = '👁️';
-      btn.classList.add('wake-active');
+    const ok = await acquireWakeLock();
+    if (ok) {
+      wakeByUser = true;
+      updateWakeBtn();
       showToast('Pantalla siempre activa ✓');
-      wakeLock.addEventListener('release', () => {
-        wakeLock = null;
-        btn.textContent = '💤';
-        btn.classList.remove('wake-active');
-      });
-    } catch(e) {
-      showToast('No se pudo activar: ' + e.message);
+    } else {
+      showToast('No se pudo activar');
     }
   }
 }
-// Re-acquire wake lock after visibility change (e.g. tab switch)
+
+// Re-adquiere el lock al volver a la pestaña si alguien lo necesitaba
 document.addEventListener('visibilitychange', async () => {
-  if (wakeLock !== null && document.visibilityState === 'visible') {
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-    } catch(e) {}
+  if ((wakeByUser || wakeByCook) && wakeLock === null && document.visibilityState === 'visible') {
+    await acquireWakeLock();
   }
 });
 
@@ -575,12 +614,19 @@ function openDetail(id) {
   body.className = 'detail-body';
 
   // Build ingredients list
-  const ingsHTML = (r.ingredients||[]).map((ing, i) => `
+  const ingsHTML = (r.ingredients||[]).map((ing, i) => {
+    // Las líneas-subtítulo (amount "—" o vacío) son encabezados de grupo,
+    // no ingredientes: no son clicables ni se pueden marcar.
+    if (ing.amount === '—' || !ing.amount) {
+      return `<li class="ing-group-title">${ing.name}</li>`;
+    }
+    return `
     <li class="ing-item ${checked[id][i]?'checked':''}" data-idx="${i}">
       <span class="ing-check"></span>
       <span class="ing-amount">${ing.amount}</span>
       <span class="ing-name-text">${ing.name}</span>
-    </li>`).join('');
+    </li>`;
+  }).join('');
 
   // Build steps list
   const stepsHTML = (r.steps||[]).map((s, i) => `
@@ -641,16 +687,44 @@ function openDetail(id) {
 /* ── COOK MODE (paso a paso a pantalla completa) ────────── */
 let cookSteps = [];
 let cookIndex = 0;
+let cookIngredients = [];
 
-function openCookMode(id) {
+async function openCookMode(id) {
   const r = recipes.find(x => x.id === id);
   if (!r || !(r.steps||[]).length) return;
   cookSteps = r.steps;
+  cookIngredients = r.ingredients || [];
   cookIndex = 0;
   document.getElementById('cook-recipe-name').textContent = r.name;
+  buildCookIngredients();
   renderCookStep();
   document.getElementById('cook-mode').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Mantener la pantalla encendida mientras cocinas
+  if (await acquireWakeLock()) wakeByCook = true;
+}
+
+function buildCookIngredients() {
+  const list = document.getElementById('cook-ing-list');
+  list.innerHTML = '';
+  cookIngredients.forEach(ing => {
+    const li = document.createElement('li');
+    // Las líneas-subtítulo (amount "—") se muestran como encabezado
+    if (ing.amount === '—' || !ing.amount) {
+      li.className = 'cook-ing-subtitle';
+      li.textContent = ing.name;
+    } else {
+      li.className = 'cook-ing-item';
+      li.innerHTML = `<span class="cook-ing-amount">${ing.amount}</span><span>${ing.name}</span>`;
+    }
+    list.appendChild(li);
+  });
+}
+
+function toggleCookIngredients() {
+  const panel = document.getElementById('cook-ingredients');
+  panel.classList.toggle('open');
 }
 
 function renderCookStep() {
@@ -683,16 +757,25 @@ function cookPrev() {
   }
 }
 
-function closeCookMode() {
+async function closeCookMode() {
   document.getElementById('cook-mode').classList.remove('open');
+  document.getElementById('cook-ingredients').classList.remove('open');
   // Si el detalle sigue abierto debajo, mantenemos el scroll bloqueado
   const detailOpen = document.getElementById('detail-sheet').classList.contains('open');
   if (!detailOpen) document.body.style.overflow = '';
+
+  // Soltar el wake lock que pidió el modo cocina, salvo que el usuario
+  // lo tenga activado a mano desde el header
+  if (wakeByCook) {
+    wakeByCook = false;
+    if (!wakeByUser) await releaseWakeLock();
+  }
 }
 
 document.getElementById('cook-close').addEventListener('click', closeCookMode);
 document.getElementById('cook-next').addEventListener('click', cookNext);
 document.getElementById('cook-prev').addEventListener('click', cookPrev);
+document.getElementById('cook-ing-btn').addEventListener('click', toggleCookIngredients);
 
 // Navegación con teclado (útil en escritorio)
 document.addEventListener('keydown', e => {
@@ -1143,6 +1226,8 @@ function openForm(editId) {
 }
 
 function addIng(amount='', name='') {
+  // Si la cantidad es "—", es una fila de grupo/subtítulo
+  if (amount === '—') { addIngGroup(name); return; }
   const el = document.createElement('div');
   el.className = 'ing-dyn';
   const inp1 = document.createElement('input');
@@ -1160,6 +1245,29 @@ function addIng(amount='', name='') {
   rm.addEventListener('click', () => el.remove());
   el.appendChild(inp1);
   el.appendChild(inp2);
+  el.appendChild(rm);
+  document.getElementById('ing-list').appendChild(el);
+}
+
+// Fila de encabezado de grupo (p.ej. "Masa", "Frosting"). Guarda amount "—".
+function addIngGroup(name='') {
+  const el = document.createElement('div');
+  el.className = 'ing-dyn ing-dyn-group';
+  el.dataset.group = '1';
+  const label = document.createElement('span');
+  label.className = 'ing-group-marker';
+  label.textContent = '⊟';
+  const inp = document.createElement('input');
+  inp.className = 'f-input';
+  inp.placeholder = 'Nombre del grupo (ej. Masa, Frosting…)';
+  inp.value = name;
+  const rm = document.createElement('button');
+  rm.type = 'button';
+  rm.className = 'btn-rm';
+  rm.textContent = '✕';
+  rm.addEventListener('click', () => el.remove());
+  el.appendChild(label);
+  el.appendChild(inp);
   el.appendChild(rm);
   document.getElementById('ing-list').appendChild(el);
 }
@@ -1192,6 +1300,11 @@ function saveRecipe() {
   if (!name) { showToast('El nombre es obligatorio'); return; }
 
   const ingredients = [...document.querySelectorAll('#ing-list .ing-dyn')].map(row => {
+    if (row.dataset.group === '1') {
+      // Fila de grupo: un solo input, se guarda como subtítulo (amount "—")
+      const gi = row.querySelector('input');
+      return { amount: '—', name: gi.value.trim() };
+    }
     const ins = row.querySelectorAll('input');
     return { amount: ins[0].value.trim(), name: ins[1].value.trim() };
   }).filter(i => i.name);
@@ -1269,15 +1382,6 @@ function closeAll() {
   document.getElementById('form-sheet').classList.remove('open');
   document.body.style.overflow = '';
 }
-
-/* ── SWIPE TO CLOSE ─────────────────────────────────────── */
-let touchY0 = 0;
-document.querySelectorAll('.sheet').forEach(s => {
-  s.addEventListener('touchstart', e => { touchY0 = e.touches[0].clientY; }, { passive: true });
-  s.addEventListener('touchend', e => {
-    if (e.changedTouches[0].clientY - touchY0 > 80) closeAll();
-  }, { passive: true });
-});
 
 /* ── TOAST ──────────────────────────────────────────────── */
 function showToast(msg) {

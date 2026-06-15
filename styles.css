@@ -374,6 +374,31 @@ body {
   flex-shrink: 0;
 }
 
+/* Botón de cerrar del detalle: fijo arriba a la derecha */
+.detail-close {
+  position: sticky;
+  top: 8px;
+  float: right;
+  margin: -4px 12px 0 0;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s, transform 0.1s;
+}
+.detail-close:active { transform: scale(0.92); }
+@media (hover: hover) {
+  .detail-close:hover { background: var(--surface-2); }
+}
+
 /* ══ DETAIL SHEET ════════════════════════════════════════════ */
 .detail-color-band {
   height: 8px;
@@ -508,6 +533,19 @@ body {
 }
 .ing-amount { font-size: 0.8rem; font-weight: 600; color: var(--accent); min-width: 52px; }
 .ing-name-text { font-size: 0.88rem; }
+
+/* Encabezado de grupo de ingredientes (p.ej. "Masa", "Frosting") */
+.ing-group-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+  color: var(--text-3);
+  padding: 14px 2px 5px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3px;
+}
+.ing-group-title:first-child { padding-top: 2px; }
 
 /* Steps */
 .steps-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
@@ -708,6 +746,22 @@ body {
 .dyn-list { display: flex; flex-direction: column; gap: 6px; }
 .ing-dyn { display: flex; gap: 6px; align-items: center; }
 .ing-dyn .f-input:first-child { max-width: 90px; }
+/* Fila de grupo en el editor */
+.ing-dyn-group { align-items: center; }
+.ing-dyn-group .btn-rm { margin-top: 0; }
+.ing-dyn-group .f-input { max-width: none; font-weight: 600; }
+.ing-group-marker {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  font-size: 1rem;
+}
+.add-row-pair { display: flex; gap: 6px; }
+.add-row-pair .btn-add-row { margin-top: 4px; }
+.btn-add-group { color: var(--text-2); }
 .dyn-item { display: flex; gap: 8px; align-items: flex-start; }
 .step-dyn-num {
   min-width: 24px;
@@ -880,7 +934,30 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
+.cook-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cook-ing-btn {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+}
+.cook-ing-btn:active { transform: scale(0.95); }
+@media (hover: hover) { .cook-ing-btn:hover { background: var(--surface-2); } }
 .cook-close {
   width: 40px;
   height: 40px;
@@ -893,6 +970,83 @@ body {
   cursor: pointer;
   display: grid;
   place-items: center;
+}
+
+/* Panel desplegable de ingredientes dentro del modo cocina */
+.cook-ingredients {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 70%;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.25);
+  border-top: 1px solid var(--border);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.cook-ingredients.open { transform: translateY(0); }
+.cook-ing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 10px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.cook-ing-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.cook-ing-list {
+  list-style: none;
+  margin: 0;
+  padding: 12px 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cook-ing-item {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  font-size: 0.95rem;
+  color: var(--text);
+  border-bottom: 1px solid var(--surface-2);
+}
+.cook-ing-amount {
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 70px;
+  flex-shrink: 0;
+}
+.cook-ing-subtitle {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 700;
+  padding: 12px 0 4px;
 }
 
 .cook-progress {
